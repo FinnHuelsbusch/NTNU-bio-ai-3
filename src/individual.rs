@@ -17,7 +17,7 @@ pub enum Connection {
 
 pub type Genome = Vec<Connection>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Individual {
     pub rgb_image: image::RgbImage,
     pub genome: Genome,
@@ -246,6 +246,15 @@ impl Individual {
         self.edge_value_fitness = self.calculate_edge_value(&clustered_image);
         self.connectivity_fitness = self.calculate_connectivity(&clustered_image);
         self.overall_deviation_fitness = self.calculate_overall_deviation(&clustered_image);
+    }
+
+    pub fn dominates(&self, other: &Individual) -> bool {
+        self.edge_value_fitness <= other.edge_value_fitness
+            && self.connectivity_fitness <= other.connectivity_fitness
+            && self.overall_deviation_fitness <= other.overall_deviation_fitness
+            && (self.edge_value_fitness < other.edge_value_fitness
+                || self.connectivity_fitness < other.connectivity_fitness
+                || self.overall_deviation_fitness < other.overall_deviation_fitness)
     }
     
 }

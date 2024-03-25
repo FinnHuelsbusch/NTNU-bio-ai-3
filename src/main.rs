@@ -1,12 +1,30 @@
-use individual::Individual;
+use std::env;
+
+use config::{initialize_config, Config};
+
+use crate::genetic_algorithm::run_genetic_algorithm_instance;
+
+
 
 
 mod individual;
-
+mod config;
+mod genetic_algorithm;
+mod population;
+mod selection_functions;
+mod crossover_functions;
+mod mutation_functions;
 
 fn main() {
-    let filepath = "./Project 3 training_images/86016/Test image.jpg"; 
-    let mut individual = Individual::new(filepath);
-    individual.update_objectives();
-    println!("Individual: {:?}", individual);
+    let args: Vec<String> = env::args().collect();
+    let config_path : &str;
+    if args.len() < 2 {
+        config_path = "./configs/config.json";
+    } else {
+        config_path = &args[1];
+    }
+    // Load config
+    let config: Config = initialize_config(config_path);   
+    println!("{}", serde_json::to_string_pretty(&config).unwrap());
+    run_genetic_algorithm_instance(&config);
 }

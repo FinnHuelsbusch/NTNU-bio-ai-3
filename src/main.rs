@@ -19,7 +19,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let config_path : &str;
     if args.len() < 2 {
-        config_path = "./configs/config.json";
+        config_path = "./config.json";
     } else {
         config_path = &args[1];
     }

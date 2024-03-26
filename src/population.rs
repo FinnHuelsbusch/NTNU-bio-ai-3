@@ -6,7 +6,9 @@ pub type Population = Vec<Individual>;
 pub fn initialize_random_population(config: &Config) -> Population {
     let mut population = Vec::new();
     for _ in 0..config.population_size {
-        population.push(Individual::new(&config.picture_path));
+        let mut individual = Individual::new(&config.picture_path);
+        individual.update_objectives();
+        population.push(individual);
     }
     population
 }

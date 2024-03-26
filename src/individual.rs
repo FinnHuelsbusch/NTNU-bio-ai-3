@@ -252,9 +252,9 @@ impl Individual {
         self.edge_value_fitness <= other.edge_value_fitness
             && self.connectivity_fitness <= other.connectivity_fitness
             && self.overall_deviation_fitness <= other.overall_deviation_fitness
-            && (self.edge_value_fitness < other.edge_value_fitness
-                || self.connectivity_fitness < other.connectivity_fitness
-                || self.overall_deviation_fitness < other.overall_deviation_fitness)
+            && (self.edge_value_fitness > other.edge_value_fitness // higher fitness is better
+                || self.connectivity_fitness < other.connectivity_fitness // lower fitness is better
+                || self.overall_deviation_fitness < other.overall_deviation_fitness) // lower fitness is better
     }
     
 }

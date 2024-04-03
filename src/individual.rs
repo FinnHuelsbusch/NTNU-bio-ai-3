@@ -1,4 +1,4 @@
-use std::{collections::HashSet, vec};
+use std::{collections::{hash_map, HashMap, HashSet}, vec};
 
 
 use rand::Rng;
@@ -26,6 +26,7 @@ pub struct Individual {
     pub edge_value_fitness: f64,
     pub connectivity_fitness: f64,
     pub overall_deviation_fitness: f64,
+    pub euclidean_distance: Vec<Vec<Vec<Vec<f64>>>>
 }
 
 impl Individual {
@@ -45,13 +46,15 @@ impl Individual {
                 _ => panic!("Invalid value"),
             }
         }
-        let individual = Individual {
+        let mut individual = Individual {
             rgb_image,
             genome,
             edge_value_fitness: 0.0,
             connectivity_fitness: 0.0,
             overall_deviation_fitness: 0.0,
+            euclidean_distance: Vec::new(),
         };
+        individual.euclidean_distance = individual.calculate_euclidean_distance();
         individual
     }
 
@@ -190,10 +193,48 @@ impl Individual {
         edge_value
     }
 
-    fn calculate_connectivity(&self, clusterd_image: &Vec<Vec<usize>>) -> f64 {
-        let mut connectivity = 0.0;
-        for column in 0..self.rgb_image.width() as usize {
-            for row in 0..self.rgb_image.height() as usize {
+        
+
+    fn calculate_euclidean_distance(&self) -> Vec<Vec<Vec<Vec<f64>>>> {
+        let mut euclidean_distance = vec![
+            vec![
+                vec![
+                    vec![0.0; self.rgb_image.width() as usize];
+                    self.rgb_image.height() as usize
+                ];
+                self.rgb_image.width() as usize
+            ];
+            self.rgb_image.height() as usize
+        ];
+        for outer_row in 0..self.rgb_image.height() as usize {
+            for outer_column in 0..self.rgb_image.width() as usize {
+                for inner_row in 0..self.rgb_image.height() as usize {
+                    for inner_column in 0..self.rgb_image.width() as usize {
+                        let pixel_color = self.rgb_image.get_pixel(outer_column as u32, outer_row as u32);
+                        let other_pixel_color = self.rgb_image.get_pixel(inner_column as u32, inner_row as u32);
+                        let red_difference = pixel_color[0].abs_diff(other_pixel_color[0]);
+                        let green_difference = pixel_color[1].abs_diff(other_pixel_color[1]);
+                        let blue_difference = pixel_color[2].abs_diff(other_pixel_color[2]);
+                        euclidean_distance[outer_column][outer_row][inner_column][inner_row] = ((red_difference.pow(2) + green_difference.pow(2) + blue_difference.pow(2))as f64).sqrt();
+
+                    }
+                }
+            }
+        }
+        euclidean_distance
+    }
+
+
+
+
+    pub fn update_objectives(&mut self) {
+        let clustered_image = self.get_clustered_image();
+        let mut edge_value_fitness: f64 = 0.0;
+        let mut connectivity_fitness: f64 = 0.0;
+        let mut overall_deviation_fitness: f64 = 0.0;
+        let mut overall_deviation_map: HashMap<usize, (f64,f64,f64, u32)> = HashMap::new();
+        for row in 0..self.rgb_image.height() as usize {
+            for column in 0..self.rgb_image.width() as usize {
                 // iterate through the pixels in the 3x3 neighborhood
                 for inner_row in 0..3 {
                     for inner_column in 0..3 {
@@ -212,54 +253,55 @@ impl Individual {
                             continue;
                         }
                         // check if the pixel is in the same cluster
-                        if clusterd_image[column][row] == clusterd_image[column][row] {
+                        if clustered_image[column][row] == clustered_image[column][row] {
                             continue;
                         }
-                        // add 1/8 to the connectivity
-                        connectivity += 0.125;
+                        // get edge value difference from EUCLIDEAN_DISTANCE
+                        edge_value_fitness += self.euclidean_distance[column][row][column][row];
+                        connectivity_fitness += 0.125;
                     }
                 }
+                overall_deviation_map
+                            .entry(clustered_image[column][row])
+                            .and_modify(|(sum_red, sum_green, sum_blue, count)| {
+                                *sum_red += self.rgb_image.get_pixel(column as u32, row as u32)[0] as f64;
+                                *sum_green += self.rgb_image.get_pixel(column as u32, row as u32)[1] as f64;
+                                *sum_blue += self.rgb_image.get_pixel(column as u32, row as u32)[2] as f64;
+                                *count += 1;
+                            })
+                            .or_insert((
+                                self.rgb_image.get_pixel(column as u32, row as u32)[0] as f64,
+                                self.rgb_image.get_pixel(column as u32, row as u32)[1] as f64,
+                                self.rgb_image.get_pixel(column as u32, row as u32)[2] as f64,
+                                1,
+                            ));
             }
         }
-        connectivity
-    }
-
-    fn calculate_overall_deviation(&self, clusterd_image: &Vec<Vec<usize>>) -> f64 {
-        let mut overall_deviation = 0.0;
-        for outer_row in 0..self.rgb_image.height() as usize {
-            for outer_column in 0..self.rgb_image.width() as usize {
-                // iteratate over every remaining pixel in the image
-                for inner_row in outer_row..self.rgb_image.height() as usize {
-                    for inner_column in outer_column..self.rgb_image.width() as usize {
-                        // check if the pixel is in the same cluster
-                        if clusterd_image[outer_column][outer_row] == clusterd_image[inner_column][inner_row] {
-                            continue;
-                        }
-                        // calculate the difference in color between the two pixels
-                        let pixel_color = self.rgb_image.get_pixel(outer_column as u32, outer_row as u32);
-                        let neighbor_color = self.rgb_image.get_pixel(inner_column as u32, inner_row as u32);
-                        let pixel_color = pixel_color.0;
-                        let neighbor_color = neighbor_color.0;
-                        let mut color_difference = 0.0;
-                        // calculate euclidean distance between the two colors
-                        for i in 0..3 {
-                            color_difference += (pixel_color[i] as f64 - neighbor_color[i] as f64).powi(2);
-                        }
-                        color_difference = color_difference.sqrt();
-                        // add the color difference to the overall deviation
-                        overall_deviation += color_difference;
-                    }
-                }
+        let mut average_color_per_cluster: HashMap<usize, (f64, f64, f64)> = HashMap::new();
+        for (cluster_id, (sum_red, sum_green, sum_blue, count)) in overall_deviation_map {
+            average_color_per_cluster.insert(
+                cluster_id,
+                (
+                    sum_red / count as f64,
+                    sum_green / count as f64,
+                    sum_blue / count as f64,
+                ),
+            );
+        }
+        overall_deviation_fitness = 0.0;
+        for row in 0..self.rgb_image.height() as usize {
+            for column in 0..self.rgb_image.width() as usize {
+                let pixel_color = self.rgb_image.get_pixel(column as u32, row as u32);
+                let average_color = average_color_per_cluster.get(&clustered_image[column][row]).unwrap();
+                overall_deviation_fitness += ((pixel_color[0] as f64 - average_color.0).powi(2)
+                    + (pixel_color[1] as f64 - average_color.1).powi(2)
+                    + (pixel_color[2] as f64 - average_color.2).powi(2))
+                    .sqrt();
             }
         }
-        overall_deviation
-    }
-
-    pub fn update_objectives(&mut self) {
-        let clustered_image = self.get_clustered_image();
-        self.edge_value_fitness = self.calculate_edge_value(&clustered_image);
-        self.connectivity_fitness = self.calculate_connectivity(&clustered_image);
-        self.overall_deviation_fitness = self.calculate_overall_deviation(&clustered_image);
+        self.edge_value_fitness = edge_value_fitness;
+        self.connectivity_fitness = connectivity_fitness;
+        self.overall_deviation_fitness = overall_deviation_fitness;
     }
 
     pub fn dominates(&self, other: &Individual) -> bool {

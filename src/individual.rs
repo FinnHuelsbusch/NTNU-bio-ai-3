@@ -60,6 +60,16 @@ impl Individual {
         img.to_rgb8()
     }
 
+    fn do_arrows_face_each_other(arrow1: Connection, arrow2: Connection) -> bool {
+        match arrow1 {
+            Connection::None => false,
+            Connection::Up => arrow2 == Connection::Down,
+            Connection::Down => arrow2 == Connection::Up,
+            Connection::Left => arrow2 == Connection::Right,
+            Connection::Right => arrow2 == Connection::Left,
+        }
+    }
+
     fn get_clustered_image(&self) -> Vec<Vec<usize>> {
         // create two-dimensional vector to store the cluster
         let mut clustered_image: Vec<Vec<usize>> =
@@ -70,13 +80,17 @@ impl Individual {
         let mut next_unused_cluster_id = 1;
         for row in 0..self.rgb_image.height() as usize {
             for column in 0..self.rgb_image.width() as usize {
+                if clustered_image[column][row] != 0 {
+                    continue;
+                }
                 let mut current_column = column;
                 let mut current_row = row;
                 let mut visited_pixels: HashSet<(usize, usize)> = HashSet::new();
-                let mut current_arrow =
+                let mut current_arrow = self.genome[(row * self.rgb_image.height() as usize + column) as usize];
+                let mut previous_arrow = Connection::None;
                 self.genome[(row * self.rgb_image.height() as usize + column) as usize];
                 let mut cluster_to_use = 0;
-                while current_arrow != Connection::None {
+                while current_arrow != Connection::None && !Individual::do_arrows_face_each_other(current_arrow, previous_arrow) {
                     visited_pixels.insert((current_column, current_row));
                     let mut pixel_pointed_to = (column, row);
                     match current_arrow {

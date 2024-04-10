@@ -1,28 +1,28 @@
 {
-    "picture_path": "./Project 3 training_images/86016/Test image.jpg",
-    "population_size": 10,
-    "number_of_generations": 10, 
-    "parent_selection": {
-        "name": "tournament",
-        "tournament_size": 5,
-        "tournament_probability": 0.75
-    },
-    "crossovers": [
-        {
-            "name": "one_point_crossover",
-            "crossover_probability": 0.75
-        }
-    ],
-    "mutations": [
-        {
-            "name": "flip_one_bit",
-            "mutation_probability": 0.1
-        }
-    ],
-    "survivor_selection": {
-        "name": "tournament",
-        "tournament_size": 5,
-        "tournament_probability": 0.75
-    },
-    "preserve_skyline": false
+  "picture_path": "./Project 3 training_images/86016/Test image.jpg",
+  "population_size": 1,
+  "number_of_generations": 10,
+  "parent_selection": {
+    "name": "tournament",
+    "tournament_size": 5,
+    "tournament_probability": 0.75
+  },
+  "crossovers": [
+    {
+      "name": "one_point_crossover",
+      "crossover_probability": 0.75
+    }
+  ],
+  "mutations": [
+    {
+      "name": "flip_one_bit",
+      "mutation_probability": 0.1
+    }
+  ],
+  "survivor_selection": {
+    "name": "tournament",
+    "tournament_size": 5,
+    "tournament_probability": 0.75
+  },
+  "preserve_skyline": false
 }

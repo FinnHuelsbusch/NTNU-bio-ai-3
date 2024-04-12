@@ -1,6 +1,5 @@
-use crate::{config::Config, individual::Genome, population::Population};
+use crate::{ config::Config, individual::Genome, population::Population };
 use rand::Rng;
-
 
 pub fn one_point_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Option<Genome>) {
     assert_eq!(genome1.len(), genome2.len());
@@ -12,11 +11,15 @@ pub fn one_point_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Optio
         child1[i] = genome2[i];
         child2[i] = genome1[i];
     }
+
     (child1, Some(child2))
 }
-    
 
-pub fn n_point_crossover(genome1: &Genome, genome2: &Genome, number_of_slices: usize) -> (Genome, Option<Genome>) {
+pub fn n_point_crossover(
+    genome1: &Genome,
+    genome2: &Genome,
+    number_of_slices: usize
+) -> (Genome, Option<Genome>) {
     assert_eq!(genome1.len(), genome2.len());
     let mut rng = rand::thread_rng();
     let mut slices = Vec::new();
@@ -42,7 +45,6 @@ pub fn n_point_crossover(genome1: &Genome, genome2: &Genome, number_of_slices: u
     (child1, Some(child2))
 }
 
-
 pub fn uniform_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Option<Genome>) {
     assert_eq!(genome1.len(), genome2.len());
     let mut rng = rand::thread_rng();
@@ -57,10 +59,7 @@ pub fn uniform_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Option<
     (child1, Some(child2))
 }
 
-pub fn crossover(
-    population: &mut Population,
-    config: &Config
-) -> Population {
+pub fn crossover(population: &mut Population, config: &Config) -> Population {
     let mut rng = rand::thread_rng();
     let mut children: Population = population.clone();
     for crossover_config in config.crossovers.iter() {
@@ -81,18 +80,18 @@ pub fn crossover(
                 "one_point" =>
                     one_point_crossover(
                         &population[individual_index_a].genome,
-                        &population[individual_index_b].genome,
+                        &population[individual_index_b].genome
                     ),
                 "n_point" =>
                     n_point_crossover(
                         &population[individual_index_a].genome,
                         &population[individual_index_b].genome,
-                        crossover_config.number_of_slices.unwrap(),
+                        crossover_config.number_of_slices.unwrap()
                     ),
                 "uniform" =>
                     uniform_crossover(
                         &population[individual_index_a].genome,
-                        &population[individual_index_b].genome,
+                        &population[individual_index_b].genome
                     ),
 
                 // Handle the rest of cases

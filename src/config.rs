@@ -16,10 +16,9 @@ pub struct FunctionConfig {
 
     #[serde(default)]
     pub combine_parents_and_offspring: Option<bool>,
-    
+
     #[serde(default)]
     pub number_of_slices: Option<usize>,
-
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

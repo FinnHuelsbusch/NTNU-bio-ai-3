@@ -12,6 +12,7 @@ mod selection_functions;
 mod crossover_functions;
 mod mutation_functions;
 mod utils;
+mod distance;
 
 #[show_image::main]
 fn main() {

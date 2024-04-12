@@ -1,22 +1,22 @@
 {
   "picture_path": "./Project 3 training_images/86016/Test image.jpg",
-  "population_size": 1,
-  "number_of_generations": 10,
+  "population_size": 50,
+  "number_of_generations": 100,
   "parent_selection": {
     "name": "tournament",
-    "tournament_size": 5,
+    "tournament_size": 4,
     "tournament_probability": 0.75
   },
   "crossovers": [
     {
       "name": "one_point_crossover",
-      "crossover_probability": 0.75
+      "crossover_probability": 0.7
     }
   ],
   "mutations": [
     {
       "name": "flip_one_bit",
-      "mutation_probability": 0.1
+      "mutation_probability": 0.2
     }
   ],
   "survivor_selection": {

@@ -2,6 +2,7 @@ use std::i128::MIN;
 use std::io::{ self, Write };
 
 use crate::crossover_functions::crossover;
+use crate::utils::show;
 use crate::{ individual };
 use crate::mutation_functions::mutate;
 use crate::selection_functions::{ parent_selection, survivor_selection };
@@ -85,25 +86,29 @@ pub fn run_genetic_algorithm_instance(config: &Config) {
 
     print!("DONE\nInitial Population Statistics: ");
 
-    // for generation in 0..config.number_of_generations {
-    //     let current_population_ranked = non_dominated_sort(&population);
-    //     log_population_statistics(&population, &current_population_ranked);
-    //     println!("Calculating Generation: {:?}", generation);
+    for generation in 0..config.number_of_generations {
+        let current_population_ranked = non_dominated_sort(&population);
+        println!("{:?}, {:?}", population.len(), current_population_ranked.len());
+        log_population_statistics(&population, &current_population_ranked);
 
-    //     print!("SEL|");
-    //     io::stdout().flush().unwrap();
-    //     let mut parents = parent_selection(&population, &current_population_ranked, &config);
+        println!("Calculating Generation: {:?}", generation);
 
-    //     print!("CROSS|");
-    //     io::stdout().flush().unwrap();
-    //     let mut children = crossover(&mut parents, &config);
+        print!("SEL|");
+        io::stdout().flush().unwrap();
+        let mut parents = parent_selection(&population, &current_population_ranked, &config);
 
-    //     print!("MUT|");
-    //     io::stdout().flush().unwrap();
-    //     children = mutate(&mut children, &config);
+        print!("CROSS|");
+        io::stdout().flush().unwrap();
+        let mut children = crossover(&mut parents, &config);
 
-    //     println!("SURV_SEL");
-    //     io::stdout().flush().unwrap();
-    //     population = survivor_selection(&population, &children, &config);
-    // }
+        print!("MUT|");
+        io::stdout().flush().unwrap();
+        children = mutate(&mut children, &config);
+
+        println!("SURV_SEL");
+        io::stdout().flush().unwrap();
+        population = survivor_selection(&population, &children, &config);
+    }
+    let pareto_fronts = non_dominated_sort(&population);
+    show(&population[pareto_fronts[0][0]].get_segments_image());
 }

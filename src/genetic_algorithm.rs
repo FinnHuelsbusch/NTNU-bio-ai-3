@@ -9,7 +9,7 @@ use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
 use crate::population::{ initialize_random_population, non_dominated_sort };
 
-fn log_population_statistics(population: &Population, current_population_ranked: &Vec<Vec<usize>>) {
+fn log_population_statistics(population: &Population, current_population_ranked: &Vec<Vec<usize>>, iteration: usize) {
     // number of individuals in the skyline
     println!("Skyline: {:?}", current_population_ranked[0].len());
     // statistics of the skyline
@@ -22,8 +22,15 @@ fn log_population_statistics(population: &Population, current_population_ranked:
     let mut min_overall_deviation_fitness = f64::MAX;
     let mut max_overall_deviation_fitness = f64::MIN;
     let mut avg_overall_deviation_fitness = 0.0;
+    let mut file_output = String::new();
 
     for individual in current_population_ranked[0].iter() {
+        file_output += &format!(
+            "({},{},{});",
+            population[*individual].edge_value_fitness,
+            population[*individual].connectivity_fitness,
+            population[*individual].overall_deviation_fitness
+        );
         let edge_value_fitness = population[*individual].edge_value_fitness;
         let connectivity_fitness = population[*individual].connectivity_fitness;
         let overall_deviation_fitness = population[*individual].overall_deviation_fitness;
@@ -52,8 +59,22 @@ fn log_population_statistics(population: &Population, current_population_ranked:
         }
         avg_overall_deviation_fitness += overall_deviation_fitness;
     }
+    file_output += "\n";
+    for rank in 1 .. current_population_ranked.len() {
+        for individual in current_population_ranked[rank].iter() {
+            file_output += &format!(
+                "({},{},{});",
+                population[*individual].edge_value_fitness,
+                population[*individual].connectivity_fitness,
+                population[*individual].overall_deviation_fitness
+            );
+        }
+    }
 
-    avg_edge_value_fitness /= current_population_ranked[0].len() as f64;
+
+    let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
+    file.write_all(file_output.as_bytes()).unwrap();
+
     avg_connectivity_fitness /= current_population_ranked[0].len() as f64;
     avg_overall_deviation_fitness /= current_population_ranked[0].len() as f64;
 
@@ -89,7 +110,7 @@ pub fn run_genetic_algorithm_instance(config: &Config) {
     for generation in 0..config.number_of_generations {
         let current_population_ranked = non_dominated_sort(&population);
         println!("{:?}, {:?}", population.len(), current_population_ranked.len());
-        log_population_statistics(&population, &current_population_ranked);
+        log_population_statistics(&population, &current_population_ranked, generation);
 
         println!("Calculating Generation: {:?}", generation);
 

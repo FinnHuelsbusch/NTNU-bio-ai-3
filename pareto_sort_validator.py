@@ -46,7 +46,7 @@ for file in [f for f in os.listdir('./logs') if f.endswith('.txt')]:
         if df['front'].nunique() == 1 and df['front'].unique()[0] == 0:
             continue
 
-        if any((df['Pareto'] == 'Yes') & (df['front'] == 1)) or any((df['Pareto'] == 'No') & (df['front'] == 0)):
+        if any((df['Pareto'] == 'Yes') & (df['front'] != 0)) or any((df['Pareto'] == 'No') & (df['front'] == 0)):
             print(file)
             df['edge_value_fitness'] = -df['edge_value_fitness']
             df.sort_values(['connectivity_fitness', 'overall_deviation_fitness', 'edge_value_fitness'], inplace=True)

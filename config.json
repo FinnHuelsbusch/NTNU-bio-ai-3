@@ -1,7 +1,7 @@
 {
   "picture_path": "./Project 3 training_images/86016/Test image.jpg",
   "population_size": 50,
-  "number_of_generations": 100,
+  "number_of_generations": 20,
   "parent_selection": {
     "name": "tournament",
     "tournament_size": 4,

@@ -166,6 +166,7 @@ impl Individual {
                 }
 
                 for pixel in connected_pixels.into_iter() {
+                    // TODO evaluate if it is faster to check if the pixel is already assigned to a cluster and break as soon as the first pixel is found. 
                     let column = (pixel % width) as usize;
                     let row = (pixel / width) as usize;
                     cluster_map[row][column] = cluster_id;
@@ -307,11 +308,11 @@ impl Individual {
             self.connectivity_fitness < other.connectivity_fitness || // lower score is better
             self.overall_deviation_fitness < other.overall_deviation_fitness; // lower score is better
 
-        let worse_in_all_objectives =
-            self.edge_value_fitness <= other.edge_value_fitness &&
-            self.connectivity_fitness >= other.connectivity_fitness &&
-            self.overall_deviation_fitness >= other.overall_deviation_fitness;
+        let worse_in_any_objective =
+            self.edge_value_fitness < other.edge_value_fitness ||
+            self.connectivity_fitness > other.connectivity_fitness ||
+            self.overall_deviation_fitness > other.overall_deviation_fitness;
 
-        better_in_atleast_one_objective && !worse_in_all_objectives
+        better_in_atleast_one_objective && !worse_in_any_objective
     }
 }

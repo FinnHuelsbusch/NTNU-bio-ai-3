@@ -69,6 +69,7 @@ fn log_population_statistics(population: &Population, current_population_ranked:
                 population[*individual].overall_deviation_fitness
             );
         }
+        file_output += "\n";
     }
 
 

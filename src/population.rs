@@ -21,11 +21,11 @@ pub fn initialize_random_population(config: &Config) -> Population {
     population
 }
 
-pub fn non_dominated_sort(population: &Population) -> Vec<Vec<usize>> {
+pub fn non_dominated_sort(population: &Population) -> Vec<Vec<Individual>> {
     let mut working_population = population.clone();
-    let mut fronts: Vec<Vec<usize>> = vec![];
+    let mut fronts: Vec<Vec<Individual>> = vec![];
     while working_population.is_empty() == false{
-        let mut dominated_by: Vec<Vec<usize>> = vec![Vec::new(); population.len()];
+        let mut dominated_by: Vec<Vec<usize>> = vec![Vec::new(); working_population.len()];
 
         for i in 0..working_population.len() {
             for j in 0..working_population.len() {
@@ -38,23 +38,18 @@ pub fn non_dominated_sort(population: &Population) -> Vec<Vec<usize>> {
             }
         }
 
-        let mut current_front: Vec<usize> = Vec::new();
+        let mut current_front: Vec<Individual> = Vec::new();
+        let mut new_working_population: Vec<Individual> = Vec::new();
         for i in 0..working_population.len() {
             if dominated_by[i].len() == 0 {
-                current_front.push(i);
+                current_front.push(working_population[i].clone());
+            } else {
+                new_working_population.push(working_population[i].clone());
             }
         }
         fronts.push(current_front);
 
-        // update working population
-        let mut new_working_population: Vec<Individual> = Vec::new();
-        for i in 0..working_population.len() {
-            if dominated_by[i].len() != 0 {
-                new_working_population.push(working_population[i].clone());
-            }
-        }
         working_population = new_working_population;
-
         
 
     }

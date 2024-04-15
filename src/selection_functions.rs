@@ -24,18 +24,18 @@ fn tournament_selection(
 
         let sorted_tournament = non_dominated_sort(&tournament);
         let selected_individual = if rng.gen::<f64>() < tournament_probability {
-            sorted_tournament[0][rng.gen_range(0..sorted_tournament[0].len())]
+            &sorted_tournament[0][rng.gen_range(0..sorted_tournament[0].len())]
         } else {
             // if the number of frontiers is greater than 1, select a random rank
             if sorted_tournament.len() > 1 {
                 let rank = rng.gen_range(1..sorted_tournament.len());
-                sorted_tournament[rank][rng.gen_range(0..sorted_tournament[rank].len())]
+                &sorted_tournament[rank][rng.gen_range(0..sorted_tournament[rank].len())]
             // if the number of frontiers is 1, select a random individual from the first frontier
             } else {
-                sorted_tournament[0][rng.gen_range(0..sorted_tournament[0].len())]
+                &sorted_tournament[0][rng.gen_range(0..sorted_tournament[0].len())]
             }
         };
-        new_population.push(population[selected_individual].clone());
+        new_population.push(selected_individual.clone());
     }
 
     new_population
@@ -53,12 +53,12 @@ fn full_replacement_selection(
 
 pub fn parent_selection(
     population: &Population,
-    sorted_population: &Vec<Vec<usize>>,
+    sorted_population: &Vec<Vec<Individual>>,
     config: &Config,
 ) -> Population {
     let mut new_population: Population = Vec::with_capacity(config.population_size);
     if config.preserve_skyline {
-        new_population.extend(sorted_population[0].iter().map(|&i| population[i].clone()));
+        new_population.extend(sorted_population[0].clone());
     }
     let selected_population: Population = match config.parent_selection.name.as_str() {
         "tournament" => tournament_selection(
@@ -99,11 +99,7 @@ pub fn survivor_selection(
 
     if config.preserve_skyline {
         let sorted_population = non_dominated_sort(&selection_population);
-        new_population.extend(
-            sorted_population[0]
-                .iter()
-                .map(|&i| selection_population[i].clone()),
-        );
+        new_population.extend(sorted_population[0].clone());
     }
 
     let selected_population: Population = match config.parent_selection.name.as_str() {

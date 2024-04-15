@@ -2,6 +2,7 @@ use std::i128::MIN;
 use std::io::{ self, Write };
 
 use crate::crossover_functions::crossover;
+use crate::individual::Individual;
 use crate::utils::show;
 use crate::{ individual };
 use crate::mutation_functions::mutate;
@@ -9,7 +10,7 @@ use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
 use crate::population::{ initialize_random_population, non_dominated_sort };
 
-fn log_population_statistics(population: &Population, current_population_ranked: &Vec<Vec<usize>>, iteration: usize) {
+fn log_population_statistics(population: &Population, current_population_ranked: &Vec<Vec<Individual>>, iteration: usize) {
     // number of individuals in the skyline
     println!("Skyline: {:?}", current_population_ranked[0].len());
     // statistics of the skyline
@@ -27,13 +28,13 @@ fn log_population_statistics(population: &Population, current_population_ranked:
     for individual in current_population_ranked[0].iter() {
         file_output += &format!(
             "({},{},{});",
-            population[*individual].edge_value_fitness,
-            population[*individual].connectivity_fitness,
-            population[*individual].overall_deviation_fitness
+            individual.edge_value_fitness,
+            individual.connectivity_fitness,
+            individual.overall_deviation_fitness
         );
-        let edge_value_fitness = population[*individual].edge_value_fitness;
-        let connectivity_fitness = population[*individual].connectivity_fitness;
-        let overall_deviation_fitness = population[*individual].overall_deviation_fitness;
+        let edge_value_fitness = individual.edge_value_fitness;
+        let connectivity_fitness = individual.connectivity_fitness;
+        let overall_deviation_fitness = individual.overall_deviation_fitness;
 
         if edge_value_fitness < min_edge_value_fitness {
             min_edge_value_fitness = edge_value_fitness;
@@ -64,9 +65,9 @@ fn log_population_statistics(population: &Population, current_population_ranked:
         for individual in current_population_ranked[rank].iter() {
             file_output += &format!(
                 "({},{},{});",
-                population[*individual].edge_value_fitness,
-                population[*individual].connectivity_fitness,
-                population[*individual].overall_deviation_fitness
+                individual.edge_value_fitness,
+                individual.connectivity_fitness,
+                individual.overall_deviation_fitness
             );
         }
         file_output += "\n";
@@ -132,5 +133,5 @@ pub fn run_genetic_algorithm_instance(config: &Config) {
         population = survivor_selection(&population, &children, &config);
     }
     let pareto_fronts = non_dominated_sort(&population);
-    show(&population[pareto_fronts[0][0]].get_segments_image());
+    show(&pareto_fronts[0][0].get_segments_image());
 }

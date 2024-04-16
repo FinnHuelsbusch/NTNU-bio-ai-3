@@ -13,8 +13,7 @@ pub fn initialize_random_population(config: &Config) -> Population {
 
     let mut population = Vec::new();
     for _ in 0..config.population_size {
-        let mut individual = Individual::new(&config.picture_path);
-        individual.euclidean_distance = distance_map.clone();
+        let mut individual = Individual::new(&config, distance_map.clone());
         individual.update_objectives();
         population.push(individual);
     }

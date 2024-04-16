@@ -26,6 +26,7 @@ pub struct Config {
     pub picture_path: String,
     pub population_size: usize,
     pub number_of_generations: usize,
+    pub initialization_method: String,
     pub parent_selection: FunctionConfig,
     pub crossovers: Vec<FunctionConfig>,
     pub mutations: Vec<FunctionConfig>,

@@ -30,25 +30,27 @@ pub fn mutate(
             * mutation_config.probability.unwrap_or(0.0))
         .ceil() as u64;
 
+
         for _ in 0..number_of_mutations {
             let individual_index: usize = rng.gen_range(0..config.population_size);
-
-            let child_genome: Genome = match mutation_config.name.as_str() {
+            let child_genome = &mut children[individual_index].genome;
+            match mutation_config.name.as_str() {
                 "flip_one_bit" => {
-                    let mut child_genome = children[individual_index].genome.clone();
-                    flip_one_bit(&mut child_genome);
-                    child_genome
+                    flip_one_bit(child_genome)
                 }
                 _ => panic!(
                     "Didn't have an Implementation for mutation function: {:?}",
                     mutation_config.name.as_str()
                 ),
             };
+            for i in 0..child_genome.len(){
+                if population[individual_index].genome[i] != child_genome[i]{
+                    print!("Mutataion happened");
+                    break;
+                }
+            }
 
-            let mut child = children[individual_index].clone();
-            child.genome = child_genome;
-            child.update_objectives();
-            children.push(child);
+            children[individual_index].update_objectives();
             
         }
     }

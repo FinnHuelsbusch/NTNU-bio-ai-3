@@ -1,6 +1,6 @@
 {
   "picture_path": "./Project 3 training_images/86016/Test image.jpg",
-  "population_size": 10,
+  "population_size": 5,
   "number_of_generations": 20,
   "initialization_method": "mst",
   "parent_selection": {

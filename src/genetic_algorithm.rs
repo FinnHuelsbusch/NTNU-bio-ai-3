@@ -124,6 +124,18 @@ pub fn run_genetic_algorithm_instance(config: &Config) {
         println!("SURV_SEL");
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, &config);
+        print!("Number of None in genes of children: ");
+        // print number of None in gene of each individual
+        for individual in children.iter() {
+            let mut none_count = 0;
+            for gene in individual.genome.iter() {
+                if gene == &individual::Connection::None {
+                    none_count += 1;
+                }
+            }
+            print!("{:?},", none_count);
+        }
+        println!();
     }
     let pareto_fronts = non_dominated_sort(&population);
     show(&pareto_fronts[0][0].get_segments_image());

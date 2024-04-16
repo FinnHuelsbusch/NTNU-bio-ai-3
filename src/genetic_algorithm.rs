@@ -25,43 +25,8 @@ fn log_population_statistics(population: &Population, current_population_ranked:
     let mut avg_overall_deviation_fitness = 0.0;
     let mut file_output = String::new();
 
-    for individual in current_population_ranked[0].iter() {
-        file_output += &format!(
-            "({},{},{});",
-            individual.edge_value_fitness,
-            individual.connectivity_fitness,
-            individual.overall_deviation_fitness
-        );
-        let edge_value_fitness = individual.edge_value_fitness;
-        let connectivity_fitness = individual.connectivity_fitness;
-        let overall_deviation_fitness = individual.overall_deviation_fitness;
 
-        if edge_value_fitness < min_edge_value_fitness {
-            min_edge_value_fitness = edge_value_fitness;
-        }
-        if edge_value_fitness > max_edge_value_fitness {
-            max_edge_value_fitness = edge_value_fitness;
-        }
-        avg_edge_value_fitness += edge_value_fitness;
-
-        if connectivity_fitness < min_connectivity_fitness {
-            min_connectivity_fitness = connectivity_fitness;
-        }
-        if connectivity_fitness > max_connectivity_fitness {
-            max_connectivity_fitness = connectivity_fitness;
-        }
-        avg_connectivity_fitness += connectivity_fitness;
-
-        if overall_deviation_fitness < min_overall_deviation_fitness {
-            min_overall_deviation_fitness = overall_deviation_fitness;
-        }
-        if overall_deviation_fitness > max_overall_deviation_fitness {
-            max_overall_deviation_fitness = overall_deviation_fitness;
-        }
-        avg_overall_deviation_fitness += overall_deviation_fitness;
-    }
-    file_output += "\n";
-    for rank in 1 .. current_population_ranked.len() {
+    for rank in 0 .. current_population_ranked.len() {
         for individual in current_population_ranked[rank].iter() {
             file_output += &format!(
                 "({},{},{});",
@@ -69,6 +34,33 @@ fn log_population_statistics(population: &Population, current_population_ranked:
                 individual.connectivity_fitness,
                 individual.overall_deviation_fitness
             );
+            let edge_value_fitness = individual.edge_value_fitness;
+            let connectivity_fitness = individual.connectivity_fitness;
+            let overall_deviation_fitness = individual.overall_deviation_fitness;
+    
+            if edge_value_fitness < min_edge_value_fitness {
+                min_edge_value_fitness = edge_value_fitness;
+            }
+            if edge_value_fitness > max_edge_value_fitness {
+                max_edge_value_fitness = edge_value_fitness;
+            }
+            avg_edge_value_fitness += edge_value_fitness;
+    
+            if connectivity_fitness < min_connectivity_fitness {
+                min_connectivity_fitness = connectivity_fitness;
+            }
+            if connectivity_fitness > max_connectivity_fitness {
+                max_connectivity_fitness = connectivity_fitness;
+            }
+            avg_connectivity_fitness += connectivity_fitness;
+    
+            if overall_deviation_fitness < min_overall_deviation_fitness {
+                min_overall_deviation_fitness = overall_deviation_fitness;
+            }
+            if overall_deviation_fitness > max_overall_deviation_fitness {
+                max_overall_deviation_fitness = overall_deviation_fitness;
+            }
+            avg_overall_deviation_fitness += overall_deviation_fitness;
         }
         file_output += "\n";
     }
@@ -77,8 +69,9 @@ fn log_population_statistics(population: &Population, current_population_ranked:
     let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
     file.write_all(file_output.as_bytes()).unwrap();
 
-    avg_connectivity_fitness /= current_population_ranked[0].len() as f64;
-    avg_overall_deviation_fitness /= current_population_ranked[0].len() as f64;
+    avg_connectivity_fitness /= population.len() as f64;
+    avg_overall_deviation_fitness /= population.len() as f64;
+    avg_edge_value_fitness /= population.len() as f64;
 
     // print as table
     println!("Statistics: | Edge Value Fitness | Connectivity Fitness | Overall Deviation Fitness");

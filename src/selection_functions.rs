@@ -65,7 +65,7 @@ pub fn parent_selection(
             &population,
             config.population_size - new_population.len(),
             config.parent_selection.tournament_size.unwrap(),
-            config.parent_selection.tournament_probability.unwrap(),
+            config.parent_selection.probability.unwrap(),
         ),
         // Handle the rest of cases
         _ => panic!(
@@ -114,7 +114,7 @@ pub fn survivor_selection(
             tournament_selection(&selection_population,
                                 config.population_size - new_population.len(),
                                 config.survivor_selection.tournament_size.unwrap_or_else(|| panic!("You need to specify the tournament size if you are using tournament selection for survivor selection.")),
-                                config.survivor_selection.tournament_probability.unwrap_or_else(|| panic!("You need to specify the tournament probability if you are using tournament selection for survivor selection.")))
+                                config.survivor_selection.probability.unwrap_or_else(|| panic!("You need to specify the tournament probability if you are using tournament selection for survivor selection.")))
         }
         _ => panic!(
             "Didn't have an Implementation for selection function: {:?}",

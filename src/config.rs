@@ -12,9 +12,6 @@ pub struct FunctionConfig {
     pub tournament_size: Option<usize>,
 
     #[serde(default)]
-    pub tournament_probability: Option<f64>,
-
-    #[serde(default)]
     pub combine_parents_and_offspring: Option<bool>,
 
     #[serde(default)]

@@ -1,10 +1,6 @@
 use image::RgbImage;
 
-use crate::{
-    config::Config,
-    distance::{ calculate_euclidean_distance_map_for_neighbors, EuclideanDistanceMap },
-    individual::Individual,
-};
+use crate::distance::EuclideanDistanceMap;
 
 pub struct GlobalData<'a> {
     pub rgb_image: &'a RgbImage,

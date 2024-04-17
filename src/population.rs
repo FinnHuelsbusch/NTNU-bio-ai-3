@@ -1,11 +1,4 @@
-use image::RgbImage;
-
-use crate::{
-    config::Config,
-    distance::{ calculate_euclidean_distance_map_for_neighbors, EuclideanDistanceMap },
-    global_data::{ self, GlobalData },
-    individual::Individual,
-};
+use crate::{ config::Config, global_data::GlobalData, individual::Individual };
 
 pub type Population = Vec<Individual>;
 
@@ -15,7 +8,7 @@ pub fn initialize_random_population(config: &Config, global_data: &GlobalData) -
     let mut population = Vec::with_capacity(config.population_size);
     for _ in 0..config.population_size {
         let mut individual = Individual::new(&config, global_data);
-        individual.update_objectives(config, global_data);
+        individual.update_objectives(global_data);
         population.push(individual);
     }
     population

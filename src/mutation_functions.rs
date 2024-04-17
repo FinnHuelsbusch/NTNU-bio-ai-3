@@ -2,7 +2,7 @@ use rand::Rng;
 
 use crate::{
     config::Config,
-    global_data::{ self, GlobalData },
+    global_data::GlobalData,
     individual::{ Connection, Genome },
     population::Population,
 };
@@ -45,7 +45,7 @@ pub fn mutate(population: &mut Population, config: &Config, global_data: &Global
                     ),
             }
 
-            population[individual_index].update_objectives(config, global_data);
+            population[individual_index].update_objectives(global_data);
         }
     }
 }

@@ -1,12 +1,11 @@
-use std::i128::MIN;
 use std::io::{ self, Write };
 
 use crate::crossover_functions::crossover;
-use crate::distance::{ calculate_euclidean_distance_map_for_neighbors, EuclideanDistanceMap };
+
 use crate::global_data::GlobalData;
 use crate::individual::Individual;
 use crate::utils::show;
-use crate::{ individual };
+use crate::individual;
 use crate::mutation_functions::mutate;
 use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
@@ -70,8 +69,8 @@ fn log_population_statistics(
         file_output += "\n";
     }
 
-    // let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
-    // file.write_all(file_output.as_bytes()).unwrap();
+    let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
+    file.write_all(file_output.as_bytes()).unwrap();
 
     avg_connectivity_fitness /= population.len() as f64;
     avg_overall_deviation_fitness /= population.len() as f64;

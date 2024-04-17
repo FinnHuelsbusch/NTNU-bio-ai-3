@@ -3,7 +3,6 @@ use image::{ ImageBuffer, Rgb, RgbImage };
 use rand::Rng;
 
 use crate::{
-    config::Config,
     distance::{ get_nearest_neighbor_value, EuclideanDistanceMap },
     global_data::GlobalData,
 };
@@ -183,7 +182,7 @@ pub struct Individual {
 }
 
 impl Individual {
-    pub fn new_random(config: &Config, global_data: &GlobalData) -> Individual {
+    pub fn new_random(global_data: &GlobalData) -> Individual {
         let genome: Genome;
         genome = Individual::init_random_genome(global_data.rgb_image);
         Individual {
@@ -194,7 +193,7 @@ impl Individual {
         }
     }
 
-    pub fn new_with_genome(config: &Config, global_data: &GlobalData, genome: &Genome) -> Individual {
+    pub fn new_with_genome(genome: &Genome) -> Individual {
         Individual {
             genome: genome.clone(),
             edge_value_fitness: 0.0,

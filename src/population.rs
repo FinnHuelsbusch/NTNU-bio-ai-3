@@ -1,46 +1,29 @@
-<<<<<<< HEAD
-use image::RgbImage;
-
-use crate::{
-    config::Config,
-    distance::{ calculate_euclidean_distance_map_for_neighbors, EuclideanDistanceMap },
-    global_data::{ self, GlobalData },
-    individual::{self, Individual},
-};
-=======
-use crate::{ config::Config, global_data::GlobalData, individual::Individual };
->>>>>>> 540c9d203c408c3c57ec3abe26629c7bc413b26b
+use crate::{ config::Config, global_data::GlobalData, individual::{get_mst_genome, Individual} };
 
 pub type Population = Vec<Individual>;
 
-pub fn initialize_random_population(config: &Config, global_data: &GlobalData) -> Population {
+pub fn initialize_population(config: &Config, global_data: &GlobalData) -> Population {
     // calculate euclidian distance map for the image and copy it to each individual
 
     let mut population = Vec::with_capacity(config.population_size);
-<<<<<<< HEAD
     match config.initialization_method.as_str() {
         "random" => {
             for _ in 0..config.population_size {
-                let mut individual = Individual::new_random(&config, global_data);
-                individual.update_objectives(config, global_data);
-                population.push(individual);
+                population.push(Individual::new_random(global_data));
             }
         }
         "mst" => {
-            let genome = individual::get_mst_genome(global_data.rgb_image, global_data.euclidean_distance_map);
-            let mut individual = Individual::new_with_genome(&config, global_data, &genome);
-            individual.update_objectives(config, global_data);
+            let genome = get_mst_genome(global_data.rgb_image, global_data.euclidean_distance_map);
+            let mut individual = Individual::new_with_genome(&genome);
+            individual.update_objectives(global_data);
             for _ in 0..config.population_size {
                 population.push(individual.clone());
             }
         }
-        _ => panic!("Invalid initialization method"),
-=======
-    for _ in 0..config.population_size {
-        let mut individual = Individual::new(&config, global_data);
-        individual.update_objectives(global_data);
-        population.push(individual);
->>>>>>> 540c9d203c408c3c57ec3abe26629c7bc413b26b
+        _ => {
+            panic!("Invalid initialization method");
+        }
+        
     }
 
     

@@ -9,7 +9,7 @@ use crate::individual;
 use crate::mutation_functions::mutate;
 use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
-use crate::population::{ initialize_random_population, non_dominated_sort };
+use crate::population::{ initialize_population, non_dominated_sort };
 
 fn log_population_statistics(
     population: &Population,
@@ -101,7 +101,7 @@ fn log_population_statistics(
 pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData) {
     println!("Starting Genetic Algorithm Instance");
     print!("Initializing Population...");
-    let mut population: Population = initialize_random_population(config, global_data);
+    let mut population: Population = initialize_population(config, global_data);
 
     print!("DONE\nInitial Population Statistics: ");
 

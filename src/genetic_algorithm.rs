@@ -2,6 +2,8 @@ use std::i128::MIN;
 use std::io::{ self, Write };
 
 use crate::crossover_functions::crossover;
+use crate::distance::{ calculate_euclidean_distance_map_for_neighbors, EuclideanDistanceMap };
+use crate::global_data::GlobalData;
 use crate::individual::Individual;
 use crate::utils::show;
 use crate::{ individual };
@@ -97,10 +99,10 @@ fn log_population_statistics(
     );
 }
 
-pub fn run_genetic_algorithm_instance(config: &Config) {
+pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData) {
     println!("Starting Genetic Algorithm Instance");
     print!("Initializing Population...");
-    let mut population: Population = initialize_random_population(&config);
+    let mut population: Population = initialize_random_population(config, global_data);
 
     print!("DONE\nInitial Population Statistics: ");
 
@@ -113,19 +115,19 @@ pub fn run_genetic_algorithm_instance(config: &Config) {
 
         print!("SEL|");
         io::stdout().flush().unwrap();
-        let mut parents = parent_selection(&population, &current_population_ranked, &config);
+        let mut parents = parent_selection(&population, &current_population_ranked, config);
 
         print!("CROSS|");
         io::stdout().flush().unwrap();
-        let mut children = crossover(&mut parents, &config);
+        let mut children = crossover(&mut parents, config, global_data);
 
         print!("MUT|");
         io::stdout().flush().unwrap();
-        mutate(&mut children, &config);
+        mutate(&mut children, config, global_data);
 
         println!("SURV_SEL");
         io::stdout().flush().unwrap();
-        population = survivor_selection(&population, &children, &config);
+        population = survivor_selection(&population, &children, config);
         print!("Number of None in genes of children: ");
         // print number of None in gene of each individual
         for individual in children.iter() {
@@ -141,6 +143,6 @@ pub fn run_genetic_algorithm_instance(config: &Config) {
     }
     let pareto_fronts = non_dominated_sort(&population);
     for individual in pareto_fronts[0].iter() {
-        show(&individual.get_segments_image());
+        show(&individual.get_segments_image(global_data));
     }
 }

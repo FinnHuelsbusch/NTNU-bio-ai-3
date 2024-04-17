@@ -1,9 +1,12 @@
 use std::env;
 
-use config::{initialize_config, Config};
+use config::{ initialize_config, Config };
 
 use crate::{
-    genetic_algorithm::run_genetic_algorithm_instance, individual::Individual,
+    distance::calculate_euclidean_distance_map_for_neighbors,
+    genetic_algorithm::run_genetic_algorithm_instance,
+    global_data::{ GlobalData },
+    individual::Individual,
     population::non_dominated_sort,
 };
 
@@ -16,6 +19,7 @@ mod mutation_functions;
 mod population;
 mod selection_functions;
 mod utils;
+mod global_data;
 
 #[show_image::main]
 fn main() {
@@ -29,5 +33,15 @@ fn main() {
     // Load config
     let config: Config = initialize_config(config_path);
     println!("{}", serde_json::to_string_pretty(&config).unwrap());
-    run_genetic_algorithm_instance(&config);
+
+    let rgb_image = Individual::open_image_as_rgb(&config.picture_path);
+
+    let global_data = GlobalData {
+        rgb_image: &rgb_image,
+        euclidean_distance_map: &calculate_euclidean_distance_map_for_neighbors(&rgb_image),
+
+        width: rgb_image.width() as usize,
+        height: rgb_image.height() as usize,
+    };
+    run_genetic_algorithm_instance(&config, &global_data);
 }

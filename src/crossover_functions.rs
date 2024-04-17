@@ -1,4 +1,9 @@
-use crate::{ config::Config, individual::Genome, population::Population };
+use crate::{
+    config::Config,
+    global_data::{ self, GlobalData },
+    individual::Genome,
+    population::Population,
+};
 use rand::Rng;
 
 pub fn one_point_crossover(genome1: &mut Genome, genome2: &mut Genome) -> (Genome, Option<Genome>) {
@@ -56,14 +61,19 @@ pub fn uniform_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Option<
     (child1, Some(child2))
 }
 
-pub fn crossover(population: &mut Population, config: &Config) -> Population {
+pub fn crossover(
+    population: &mut Population,
+    config: &Config,
+    global_data: &GlobalData
+) -> Population {
     let mut rng = rand::thread_rng();
     let mut children: Population = population.clone();
     for crossover_config in config.crossovers.iter() {
         // Calculate the number of crossovers which should happen for the specific config
         let number_of_crossovers: u64 = (
-            (config.population_size as f64) * crossover_config.probability.unwrap() / 2.0
-        ).ceil()  as u64;
+            ((config.population_size as f64) * crossover_config.probability.unwrap()) /
+            2.0
+        ).ceil() as u64;
 
         for _ in 0..number_of_crossovers {
             let individual_index_a: usize = rng.gen_range(0..config.population_size);
@@ -101,13 +111,13 @@ pub fn crossover(population: &mut Population, config: &Config) -> Population {
 
             let mut child_a = population[individual_index_a].clone();
             child_a.genome = child_genomes.0;
-            child_a.update_objectives();
+            child_a.update_objectives(config, global_data);
             children.push(child_a);
 
             if let Some(genome) = child_genomes.1 {
                 let mut child_b = population[individual_index_b].clone();
                 child_b.genome = genome;
-                child_b.update_objectives();
+                child_b.update_objectives(config, global_data);
                 children.push(child_b);
             }
         }

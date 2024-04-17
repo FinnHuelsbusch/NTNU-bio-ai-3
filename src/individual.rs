@@ -1,12 +1,11 @@
 use std::{ cmp::Ordering, collections::{ BinaryHeap, HashMap, HashSet }, vec };
-use image::{ imageops::rotate180, ImageBuffer, Rgb, RgbImage };
-use rand::{ random, Rng };
+use image::{ ImageBuffer, Rgb, RgbImage };
+use rand::Rng;
 
 use crate::{
-    config::{ self, Config },
+    config::Config,
     distance::{ get_nearest_neighbor_value, EuclideanDistanceMap },
-    global_data::{ self, GlobalData },
-    utils::show,
+    global_data::GlobalData,
 };
 
 // create a enum
@@ -317,7 +316,7 @@ impl Individual {
         image
     }
 
-    pub fn update_objectives(&mut self, config: &Config, global_data: &GlobalData) {
+    pub fn update_objectives(&mut self, global_data: &GlobalData) {
         // get the phenotype for the image
         let clustered_image = self.get_cluster_map(
             global_data.width as i64,
@@ -400,7 +399,7 @@ impl Individual {
 
         // formular states iterate of all pixels in all segments, which translates to loop over all pixels and get the segment for the pixel
         // for every pixel get the distance to the centroid pixel and add it to the deviation
-        overall_deviation_fitness = 0.0;
+
         for row in 0..global_data.height as usize {
             for column in 0..global_data.width as usize {
                 let current_pixel = rgb_image.get_pixel(column as u32, row as u32);

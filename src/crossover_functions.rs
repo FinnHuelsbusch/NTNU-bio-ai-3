@@ -1,9 +1,4 @@
-use crate::{
-    config::Config,
-    global_data::{ self, GlobalData },
-    individual::Genome,
-    population::Population,
-};
+use crate::{ config::Config, global_data::GlobalData, individual::Genome, population::Population };
 use rand::Rng;
 
 pub fn one_point_crossover(genome1: &mut Genome, genome2: &mut Genome) -> (Genome, Option<Genome>) {
@@ -111,13 +106,13 @@ pub fn crossover(
 
             let mut child_a = population[individual_index_a].clone();
             child_a.genome = child_genomes.0;
-            child_a.update_objectives(config, global_data);
+            child_a.update_objectives(global_data);
             children.push(child_a);
 
             if let Some(genome) = child_genomes.1 {
                 let mut child_b = population[individual_index_b].clone();
                 child_b.genome = genome;
-                child_b.update_objectives(config, global_data);
+                child_b.update_objectives(global_data);
                 children.push(child_b);
             }
         }

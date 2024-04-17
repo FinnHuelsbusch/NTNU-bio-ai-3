@@ -5,9 +5,8 @@ use config::{ initialize_config, Config };
 use crate::{
     distance::calculate_euclidean_distance_map_for_neighbors,
     genetic_algorithm::run_genetic_algorithm_instance,
-    global_data::{ GlobalData },
+    global_data::GlobalData,
     individual::Individual,
-    population::non_dominated_sort,
 };
 
 mod config;

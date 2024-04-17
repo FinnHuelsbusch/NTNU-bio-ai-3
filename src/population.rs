@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 use image::RgbImage;
 
 use crate::{
@@ -6,6 +7,9 @@ use crate::{
     global_data::{ self, GlobalData },
     individual::{self, Individual},
 };
+=======
+use crate::{ config::Config, global_data::GlobalData, individual::Individual };
+>>>>>>> 540c9d203c408c3c57ec3abe26629c7bc413b26b
 
 pub type Population = Vec<Individual>;
 
@@ -13,6 +17,7 @@ pub fn initialize_random_population(config: &Config, global_data: &GlobalData) -
     // calculate euclidian distance map for the image and copy it to each individual
 
     let mut population = Vec::with_capacity(config.population_size);
+<<<<<<< HEAD
     match config.initialization_method.as_str() {
         "random" => {
             for _ in 0..config.population_size {
@@ -30,6 +35,12 @@ pub fn initialize_random_population(config: &Config, global_data: &GlobalData) -
             }
         }
         _ => panic!("Invalid initialization method"),
+=======
+    for _ in 0..config.population_size {
+        let mut individual = Individual::new(&config, global_data);
+        individual.update_objectives(global_data);
+        population.push(individual);
+>>>>>>> 540c9d203c408c3c57ec3abe26629c7bc413b26b
     }
 
     

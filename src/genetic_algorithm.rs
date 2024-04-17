@@ -10,7 +10,11 @@ use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
 use crate::population::{ initialize_random_population, non_dominated_sort };
 
-fn log_population_statistics(population: &Population, current_population_ranked: &Vec<Vec<Individual>>, iteration: usize) {
+fn log_population_statistics(
+    population: &Population,
+    current_population_ranked: &Vec<Vec<Individual>>,
+    iteration: usize
+) {
     // number of individuals in the skyline
     println!("Skyline: {:?}", current_population_ranked[0].len());
     // statistics of the skyline
@@ -25,8 +29,7 @@ fn log_population_statistics(population: &Population, current_population_ranked:
     let mut avg_overall_deviation_fitness = 0.0;
     let mut file_output = String::new();
 
-
-    for rank in 0 .. current_population_ranked.len() {
+    for rank in 0..current_population_ranked.len() {
         for individual in current_population_ranked[rank].iter() {
             file_output += &format!(
                 "({},{},{});",
@@ -37,7 +40,7 @@ fn log_population_statistics(population: &Population, current_population_ranked:
             let edge_value_fitness = individual.edge_value_fitness;
             let connectivity_fitness = individual.connectivity_fitness;
             let overall_deviation_fitness = individual.overall_deviation_fitness;
-    
+
             if edge_value_fitness < min_edge_value_fitness {
                 min_edge_value_fitness = edge_value_fitness;
             }
@@ -45,7 +48,7 @@ fn log_population_statistics(population: &Population, current_population_ranked:
                 max_edge_value_fitness = edge_value_fitness;
             }
             avg_edge_value_fitness += edge_value_fitness;
-    
+
             if connectivity_fitness < min_connectivity_fitness {
                 min_connectivity_fitness = connectivity_fitness;
             }
@@ -53,7 +56,7 @@ fn log_population_statistics(population: &Population, current_population_ranked:
                 max_connectivity_fitness = connectivity_fitness;
             }
             avg_connectivity_fitness += connectivity_fitness;
-    
+
             if overall_deviation_fitness < min_overall_deviation_fitness {
                 min_overall_deviation_fitness = overall_deviation_fitness;
             }
@@ -65,9 +68,8 @@ fn log_population_statistics(population: &Population, current_population_ranked:
         file_output += "\n";
     }
 
-
-    let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
-    file.write_all(file_output.as_bytes()).unwrap();
+    // let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
+    // file.write_all(file_output.as_bytes()).unwrap();
 
     avg_connectivity_fitness /= population.len() as f64;
     avg_overall_deviation_fitness /= population.len() as f64;

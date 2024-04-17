@@ -1,18 +1,15 @@
 use crate::{ config::Config, individual::Genome, population::Population };
 use rand::Rng;
 
-pub fn one_point_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Option<Genome>) {
+pub fn one_point_crossover(genome1: &mut Genome, genome2: &mut Genome) -> (Genome, Option<Genome>) {
     assert_eq!(genome1.len(), genome2.len());
-    let mut rng = rand::thread_rng();
-    let slice_index = rng.gen_range(0..genome1.len());
-    let mut child1 = genome1.clone();
-    let mut child2 = genome2.clone();
-    for i in slice_index..genome1.len() {
-        child1[i] = genome2[i];
-        child2[i] = genome1[i];
-    }
 
-    (child1, Some(child2))
+    let mut rng = rand::thread_rng();
+    let rng_num: usize = rng.gen_range(0..genome1.len());
+
+    genome1[rng_num..].swap_with_slice(&mut genome2[rng_num..]);
+
+    (genome1.to_vec(), Some(genome2.to_vec()))
 }
 
 pub fn n_point_crossover(
@@ -79,8 +76,8 @@ pub fn crossover(population: &mut Population, config: &Config) -> Population {
             let child_genomes: (Genome, Option<Genome>) = match crossover_config.name.as_str() {
                 "one_point" =>
                     one_point_crossover(
-                        &population[individual_index_a].genome,
-                        &population[individual_index_b].genome
+                        &mut population[individual_index_a].genome.clone(),
+                        &mut population[individual_index_b].genome
                     ),
                 "n_point" =>
                     n_point_crossover(

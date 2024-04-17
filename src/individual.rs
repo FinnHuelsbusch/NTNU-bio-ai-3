@@ -208,43 +208,26 @@ impl Individual {
             });
         }
 
-        while unseen_pixels.len() > 0 {
+        while !unseen_pixels.is_empty() {
             let mst_element = mst.pop().unwrap();
-            genome[mst_element.row * rgb_image.width() as usize + mst_element.column] = mst_element.direction;
-            unseen_pixels.remove(&(mst_element.row, mst_element.column));
-            // add the neighbors of the pixel to the mst
-            if mst_element.row > 0 && unseen_pixels.contains(&(mst_element.row - 1, mst_element.column)) {
-                mst.push(MSTelement {
-                    row: mst_element.row - 1,
-                    column: mst_element.column,
-                    direction: Connection::Down,
-                    distance: distance_map[mst_element.row][mst_element.column][0][1]
-                });
+            if unseen_pixels.remove(&(mst_element.row, mst_element.column)) {
+                genome[mst_element.row * rgb_image.width() as usize + mst_element.column] = mst_element.direction;
+                // Add the neighbors of the pixel to the mst
+                for (dr, dc, dir) in &[(0, -1, Connection::Right), (0, 1, Connection::Left), (-1, 0, Connection::Up), (1, 0, Connection::Down)] {
+                    let new_row = (mst_element.row as isize + dr) as usize;
+                    let new_col = (mst_element.column as isize + dc) as usize;
+                    if new_row < rgb_image.height() as usize && new_col < rgb_image.width() as usize {
+                        if unseen_pixels.contains(&(new_row, new_col)) {
+                            mst.push(MSTelement {
+                                row: new_row,
+                                column: new_col,
+                                direction: *dir,
+                                distance: distance_map[mst_element.row][mst_element.column][(1 - dr) as usize][(1 - dc) as usize]
+                            });
+                        }
+                    }
+                }
             }
-            if mst_element.row < rgb_image.height() as usize - 1 && unseen_pixels.contains(&(mst_element.row + 1, mst_element.column)) {
-                mst.push(MSTelement {
-                    row: mst_element.row + 1,
-                    column: mst_element.column,
-                    direction: Connection::Up,
-                    distance: distance_map[mst_element.row][mst_element.column][2][1]
-                });
-            }
-            if mst_element.column > 0 && unseen_pixels.contains(&(mst_element.row, mst_element.column - 1)) {
-                mst.push(MSTelement {
-                    row: mst_element.row,
-                    column: mst_element.column - 1,
-                    direction: Connection::Right,
-                    distance: distance_map[mst_element.row][mst_element.column][1][0]
-                });
-            }
-            if mst_element.column < rgb_image.width() as usize - 1 && unseen_pixels.contains(&(mst_element.row, mst_element.column + 1)) {
-                mst.push(MSTelement {
-                    row: mst_element.row,
-                    column: mst_element.column + 1,
-                    direction: Connection::Left,
-                    distance: distance_map[mst_element.row][mst_element.column][1][2]
-                });
-            }  
         }
         genome
     }
@@ -328,7 +311,7 @@ impl Individual {
                 let segment = clustered_image[row][column];
                 let color = colorpalett[segment % colorpalett.len()];
                 *pixel = image::Rgb([color.0, color.1, color.2]);
-                
+
             }
         }
 

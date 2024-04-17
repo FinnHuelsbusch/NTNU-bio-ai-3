@@ -174,11 +174,12 @@ fn get_connected_pixels_for_pixel(
 #[derive(Debug, Clone)]
 pub struct Individual {
     pub genome: Genome,
+    needs_update: bool, 
 
     // penalty
-    pub edge_value_fitness: f64,
-    pub connectivity_fitness: f64,
-    pub overall_deviation_fitness: f64,
+    edge_value_fitness: f64,
+    connectivity_fitness: f64,
+    overall_deviation_fitness: f64,
 }
 
 impl Individual {
@@ -187,6 +188,7 @@ impl Individual {
         genome = Individual::init_random_genome(global_data.rgb_image);
         Individual {
             genome,
+            needs_update: true,
             edge_value_fitness: 0.0,
             connectivity_fitness: 0.0,
             overall_deviation_fitness: 0.0,
@@ -196,10 +198,19 @@ impl Individual {
     pub fn new_with_genome(genome: &Genome) -> Individual {
         Individual {
             genome: genome.clone(),
+            needs_update: true,
             edge_value_fitness: 0.0,
             connectivity_fitness: 0.0,
             overall_deviation_fitness: 0.0,
         }
+    }
+
+    pub fn needs_update(&self) -> bool {
+        self.needs_update
+    }
+
+    pub fn set_needs_update(&mut self) {
+        self.needs_update = true
     }
 
     pub fn open_image_as_rgb(image_path: &str) -> image::RgbImage {
@@ -415,6 +426,14 @@ impl Individual {
         self.edge_value_fitness = edge_value_fitness;
         self.connectivity_fitness = connectivity_fitness;
         self.overall_deviation_fitness = overall_deviation_fitness;
+        self.needs_update = false;
+    }
+
+    pub fn get_objectives(&self) -> (f64, f64, f64) {
+        if self.needs_update {
+            panic!("Objectives need to be updated before getting them");
+        }
+        (self.edge_value_fitness, self.connectivity_fitness, self.overall_deviation_fitness)
     }
 
     /**

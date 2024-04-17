@@ -45,7 +45,7 @@ pub fn mutate(population: &mut Population, config: &Config, global_data: &Global
                     ),
             }
 
-            population[individual_index].update_objectives(global_data);
+            population[individual_index].set_needs_update();
         }
     }
 }

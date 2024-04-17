@@ -106,13 +106,13 @@ pub fn crossover(
 
             let mut child_a = population[individual_index_a].clone();
             child_a.genome = child_genomes.0;
-            child_a.update_objectives(global_data);
+            child_a.set_needs_update();
             children.push(child_a);
 
             if let Some(genome) = child_genomes.1 {
                 let mut child_b = population[individual_index_b].clone();
                 child_b.genome = genome;
-                child_b.update_objectives(global_data);
+                child_b.set_needs_update();
                 children.push(child_b);
             }
         }

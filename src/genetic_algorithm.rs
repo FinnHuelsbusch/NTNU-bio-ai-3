@@ -32,15 +32,17 @@ fn log_population_statistics(
 
     for rank in 0..current_population_ranked.len() {
         for individual in current_population_ranked[rank].iter() {
+            let fitness = individual.get_objectives();
+            let edge_value_fitness = fitness.0;
+            let connectivity_fitness = fitness.1;
+            let overall_deviation_fitness = fitness.2;
             file_output += &format!(
                 "({},{},{});",
-                individual.edge_value_fitness,
-                individual.connectivity_fitness,
-                individual.overall_deviation_fitness
+                edge_value_fitness, 
+                connectivity_fitness,
+                overall_deviation_fitness
             );
-            let edge_value_fitness = individual.edge_value_fitness;
-            let connectivity_fitness = individual.connectivity_fitness;
-            let overall_deviation_fitness = individual.overall_deviation_fitness;
+            
 
             if edge_value_fitness < min_edge_value_fitness {
                 min_edge_value_fitness = edge_value_fitness;
@@ -128,8 +130,13 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, config);
         print!("Number of None in genes of children: ");
+        for individual in population.iter_mut(){
+            if individual.needs_update() {
+                individual.update_objectives(global_data);
+            }
+        }
         // print number of None in gene of each individual
-        for individual in children.iter() {
+        for individual in children.iter_mut() {
             let mut none_count = 0;
             for gene in individual.genome.iter() {
                 if gene == &individual::Connection::None {

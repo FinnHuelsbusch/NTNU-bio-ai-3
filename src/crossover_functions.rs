@@ -65,8 +65,8 @@ pub fn crossover(population: &mut Population, config: &Config) -> Population {
     for crossover_config in config.crossovers.iter() {
         // Calculate the number of crossovers which should happen for the specific config
         let number_of_crossovers: u64 = (
-            (config.population_size as f64) * crossover_config.probability.unwrap()
-        ).ceil() as u64;
+            (config.population_size as f64) * crossover_config.probability.unwrap() / 2.0
+        ).ceil()  as u64;
 
         for _ in 0..number_of_crossovers {
             let individual_index_a: usize = rng.gen_range(0..config.population_size);

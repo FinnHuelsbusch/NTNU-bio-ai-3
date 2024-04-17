@@ -138,5 +138,7 @@ pub fn run_genetic_algorithm_instance(config: &Config) {
         println!();
     }
     let pareto_fronts = non_dominated_sort(&population);
-    show(&pareto_fronts[0][0].get_segments_image());
+    for individual in pareto_fronts[0].iter() {
+        show(&individual.get_segments_image());
+    }
 }

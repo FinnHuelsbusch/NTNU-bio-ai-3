@@ -308,14 +308,27 @@ impl Individual {
         let clustered_image = self.get_cluster_map();
         let mut image = self.rgb_image.clone();
 
+        let colorpalett = vec![
+            (25, 200, 56),
+            (25, 200, 56),
+            (138, 42, 226),
+            (158, 72, 0),
+            (241, 76, 192),
+            (163, 163, 163),
+            (255, 195, 0),
+            (0, 214, 255),
+            (1, 62, 255), 
+            (255, 123, 0)
+        ];
+
+
         for row in 0..height as usize {
             for column in 0..width as usize {
                 let pixel = image.get_pixel_mut(column as u32, row as u32);
                 let segment = clustered_image[row][column];
-
-                pixel.0[0] = (segment % 255) as u8;
-                pixel.0[1] = (segment % 255) as u8;
-                pixel.0[2] = (segment % 255) as u8;
+                let color = colorpalett[segment % colorpalett.len()];
+                *pixel = image::Rgb([color.0, color.1, color.2]);
+                
             }
         }
 

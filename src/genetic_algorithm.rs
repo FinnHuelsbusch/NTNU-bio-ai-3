@@ -119,7 +119,7 @@ pub fn run_genetic_algorithm_instance(config: &Config) {
 
         print!("MUT|");
         io::stdout().flush().unwrap();
-        children = mutate(&mut children, &config);
+        mutate(&mut children, &config);
 
         println!("SURV_SEL");
         io::stdout().flush().unwrap();

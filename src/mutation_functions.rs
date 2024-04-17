@@ -7,23 +7,22 @@ use crate::{config::Config, individual::{Connection, Genome}, population::Popula
 fn flip_one_bit(genome: &mut Genome) {
     let mut rng = rand::thread_rng();
     let index = rng.gen_range(0..genome.len());
-    let new_connection = match rand::thread_rng().gen_range(0..5) {
-        0 => Connection::None,
-        1 => Connection::Up,
-        2 => Connection::Down,
-        3 => Connection::Left,
-        4 => Connection::Right,
-        _ => panic!("Invalid connection value"),
-    };
-    genome[index] = new_connection;
+    // let new_connection = match rand::thread_rng().gen_range(0..5) {
+    //     0 => Connection::None,
+    //     1 => Connection::Up,
+    //     2 => Connection::Down,
+    //     3 => Connection::Left,
+    //     4 => Connection::Right,
+    //     _ => panic!("Invalid connection value"),
+    // };
+    genome[index] = Connection::None;
 }
 
 pub fn mutate(
     population: &mut Population,
     config: &Config,
-) -> Population {
+) {
     let mut rng = rand::thread_rng();
-    let mut children: Population = population.clone();
     for mutation_config in config.mutations.iter() {
         // Calculate the number of crossovers which should happen for the specific config
         let number_of_mutations: u64 = ((config.population_size as f64)
@@ -33,7 +32,7 @@ pub fn mutate(
 
         for _ in 0..number_of_mutations {
             let individual_index: usize = rng.gen_range(0..config.population_size);
-            let child_genome = &mut children[individual_index].genome;
+            let child_genome = &mut population[individual_index].genome;
             match mutation_config.name.as_str() {
                 "flip_one_bit" => {
                     flip_one_bit(child_genome)
@@ -43,17 +42,10 @@ pub fn mutate(
                     mutation_config.name.as_str()
                 ),
             };
-            for i in 0..child_genome.len(){
-                if population[individual_index].genome[i] != child_genome[i]{
-                    print!("Mutataion happened");
-                    break;
-                }
-            }
+            
 
-            children[individual_index].update_objectives();
+            population[individual_index].update_objectives();
             
         }
     }
-
-    return children;
 }

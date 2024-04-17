@@ -4,7 +4,7 @@ use crate::{
     config::Config,
     distance::{ calculate_euclidean_distance_map_for_neighbors, EuclideanDistanceMap },
     global_data::{ self, GlobalData },
-    individual::Individual,
+    individual::{self, Individual},
 };
 
 pub type Population = Vec<Individual>;
@@ -13,11 +13,26 @@ pub fn initialize_random_population(config: &Config, global_data: &GlobalData) -
     // calculate euclidian distance map for the image and copy it to each individual
 
     let mut population = Vec::with_capacity(config.population_size);
-    for _ in 0..config.population_size {
-        let mut individual = Individual::new(&config, global_data);
-        individual.update_objectives(config, global_data);
-        population.push(individual);
+    match config.initialization_method.as_str() {
+        "random" => {
+            for _ in 0..config.population_size {
+                let mut individual = Individual::new_random(&config, global_data);
+                individual.update_objectives(config, global_data);
+                population.push(individual);
+            }
+        }
+        "mst" => {
+            let genome = individual::get_mst_genome(global_data.rgb_image, global_data.euclidean_distance_map);
+            let mut individual = Individual::new_with_genome(&config, global_data, &genome);
+            individual.update_objectives(config, global_data);
+            for _ in 0..config.population_size {
+                population.push(individual.clone());
+            }
+        }
+        _ => panic!("Invalid initialization method"),
     }
+
+    
     population
 }
 

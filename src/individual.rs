@@ -18,8 +18,108 @@ pub enum Connection {
     Left,
     Right,
 }
-
 pub type Genome = Vec<Connection>;
+
+pub fn get_mst_genome(rgb_image: &image::RgbImage, distance_map: &Vec<Vec<Vec<Vec<f64>>>>) -> Genome {
+    #[derive(Debug)]
+    struct MSTelement {
+        row: usize,
+        column: usize,
+        direction: Connection,
+        distance: f64,
+    }
+
+    impl PartialEq for MSTelement {
+        fn eq(&self, other: &Self) -> bool {
+            self.distance == other.distance
+        }
+    }
+
+    impl Eq for MSTelement {}
+
+    impl PartialOrd for MSTelement {
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            self.distance.partial_cmp(&other.distance)
+        }
+    }
+
+    impl Ord for MSTelement {
+        fn cmp(&self, other: &Self) -> Ordering {
+            self.distance.partial_cmp(&other.distance).unwrap_or(Ordering::Equal)
+        }
+    }
+
+    // init the genome with none
+    let mut genome =
+        vec![Connection::None; (rgb_image.width() * rgb_image.height()).try_into().unwrap()];
+    let mut unseen_pixels: HashSet<(usize, usize)> = HashSet::new();
+    for row in 0..rgb_image.height() {
+        for column in 0..rgb_image.width() {
+            unseen_pixels.insert((row as usize, column as usize));
+        }
+    }
+    let mut mst: BinaryHeap<MSTelement> = BinaryHeap::new();
+    // chose a random pixel to start
+    let start_row = rand::thread_rng().gen_range(0..rgb_image.height()) as usize;
+    let start_column = rand::thread_rng().gen_range(0..rgb_image.width()) as usize;
+    unseen_pixels.remove(&(start_row, start_column));
+    // add the start pixel to the mst
+    if start_row > 0 {
+        mst.push(MSTelement {
+            row: start_row - 1,
+            column: start_column,
+            direction: Connection::Down,
+            distance: distance_map[start_row][start_column][0][1],
+        });
+    }
+    if start_row < (rgb_image.height() as usize) - 1 {
+        mst.push(MSTelement {
+            row: start_row + 1,
+            column: start_column,
+            direction: Connection::Up,
+            distance: distance_map[start_row][start_column][2][1],
+        });
+    }
+    if start_column > 0 {
+        mst.push(MSTelement {
+            row: start_row,
+            column: start_column - 1,
+            direction: Connection::Right,
+            distance: distance_map[start_row][start_column][1][0],
+        });
+    }
+    if start_column < (rgb_image.width() as usize) - 1 {
+        mst.push(MSTelement {
+            row: start_row,
+            column: start_column + 1,
+            direction: Connection::Left,
+            distance: distance_map[start_row][start_column][1][2],
+        });
+    }
+
+    while !unseen_pixels.is_empty() {
+        let mst_element = mst.pop().unwrap();
+        if unseen_pixels.remove(&(mst_element.row, mst_element.column)) {
+            genome[mst_element.row * rgb_image.width() as usize + mst_element.column] = mst_element.direction;
+            // Add the neighbors of the pixel to the mst
+            for (row_adjustment, column_adjustment, dir) in &[(0, -1, Connection::Right), (0, 1, Connection::Left), (-1, 0, Connection::Down), (1, 0, Connection::Up)] {
+                let new_row = (mst_element.row as isize + row_adjustment) as usize;
+                let new_col = (mst_element.column as isize + column_adjustment) as usize;
+                if new_row < rgb_image.height() as usize && new_col < rgb_image.width() as usize && unseen_pixels.contains(&(new_row, new_col)) {
+                    mst.push(MSTelement {
+                        row: new_row,
+                        column: new_col,
+                        direction: *dir,
+                        distance: distance_map[mst_element.row][mst_element.column][(1 - row_adjustment) as usize][(1 - column_adjustment) as usize]
+                    }); 
+                }
+            }
+        }
+    }
+    genome
+}
+
+
 fn get_connected_pixels_for_pixel(
     genome: &Genome,
     index: i64,
@@ -84,24 +184,20 @@ pub struct Individual {
 }
 
 impl Individual {
-    pub fn new(config: &Config, global_data: &GlobalData) -> Individual {
+    pub fn new_random(config: &Config, global_data: &GlobalData) -> Individual {
         let genome: Genome;
-
-        match config.initialization_method.as_str() {
-            "random" => {
-                genome = Individual::init_random_genome(global_data.rgb_image);
-            }
-            "mst" => {
-                genome = Individual::init_mst(
-                    global_data.rgb_image,
-                    global_data.euclidean_distance_map
-                );
-            }
-            _ => panic!("Invalid initialization method"),
-        }
-
+        genome = Individual::init_random_genome(global_data.rgb_image);
         Individual {
             genome,
+            edge_value_fitness: 0.0,
+            connectivity_fitness: 0.0,
+            overall_deviation_fitness: 0.0,
+        }
+    }
+
+    pub fn new_with_genome(config: &Config, global_data: &GlobalData, genome: &Genome) -> Individual {
+        Individual {
+            genome: genome.clone(),
             edge_value_fitness: 0.0,
             connectivity_fitness: 0.0,
             overall_deviation_fitness: 0.0,
@@ -133,106 +229,7 @@ impl Individual {
         genome
     }
 
-    fn init_mst(rgb_image: &image::RgbImage, distance_map: &Vec<Vec<Vec<Vec<f64>>>>) -> Genome {
-        #[derive(Debug)]
-        struct MSTelement {
-            row: usize,
-            column: usize,
-            direction: Connection,
-            distance: f64,
-        }
-
-        impl PartialEq for MSTelement {
-            fn eq(&self, other: &Self) -> bool {
-                self.distance == other.distance
-            }
-        }
-
-        impl Eq for MSTelement {}
-
-        impl PartialOrd for MSTelement {
-            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-                self.distance.partial_cmp(&other.distance)
-            }
-        }
-
-        impl Ord for MSTelement {
-            fn cmp(&self, other: &Self) -> Ordering {
-                self.distance.partial_cmp(&other.distance).unwrap_or(Ordering::Equal)
-            }
-        }
-
-        // init the genome with none
-        let mut genome =
-            vec![Connection::None; (rgb_image.width() * rgb_image.height()).try_into().unwrap()];
-        let mut unseen_pixels: HashSet<(usize, usize)> = HashSet::new();
-        for row in 0..rgb_image.height() {
-            for column in 0..rgb_image.width() {
-                unseen_pixels.insert((row as usize, column as usize));
-            }
-        }
-        let mut mst: BinaryHeap<MSTelement> = BinaryHeap::new();
-        // chose a random pixel to start
-        let start_row = rand::thread_rng().gen_range(0..rgb_image.height()) as usize;
-        let start_column = rand::thread_rng().gen_range(0..rgb_image.width()) as usize;
-        unseen_pixels.remove(&(start_row, start_column));
-        // add the start pixel to the mst
-        if start_row > 0 {
-            mst.push(MSTelement {
-                row: start_row - 1,
-                column: start_column,
-                direction: Connection::Down,
-                distance: distance_map[start_row][start_column][0][1],
-            });
-        }
-        if start_row < (rgb_image.height() as usize) - 1 {
-            mst.push(MSTelement {
-                row: start_row + 1,
-                column: start_column,
-                direction: Connection::Up,
-                distance: distance_map[start_row][start_column][2][1],
-            });
-        }
-        if start_column > 0 {
-            mst.push(MSTelement {
-                row: start_row,
-                column: start_column - 1,
-                direction: Connection::Right,
-                distance: distance_map[start_row][start_column][1][0],
-            });
-        }
-        if start_column < (rgb_image.width() as usize) - 1 {
-            mst.push(MSTelement {
-                row: start_row,
-                column: start_column + 1,
-                direction: Connection::Left,
-                distance: distance_map[start_row][start_column][1][2],
-            });
-        }
-
-        while !unseen_pixels.is_empty() {
-            let mst_element = mst.pop().unwrap();
-            if unseen_pixels.remove(&(mst_element.row, mst_element.column)) {
-                genome[mst_element.row * rgb_image.width() as usize + mst_element.column] = mst_element.direction;
-                // Add the neighbors of the pixel to the mst
-                for (dr, dc, dir) in &[(0, -1, Connection::Right), (0, 1, Connection::Left), (-1, 0, Connection::Up), (1, 0, Connection::Down)] {
-                    let new_row = (mst_element.row as isize + dr) as usize;
-                    let new_col = (mst_element.column as isize + dc) as usize;
-                    if new_row < rgb_image.height() as usize && new_col < rgb_image.width() as usize {
-                        if unseen_pixels.contains(&(new_row, new_col)) {
-                            mst.push(MSTelement {
-                                row: new_row,
-                                column: new_col,
-                                direction: *dir,
-                                distance: distance_map[mst_element.row][mst_element.column][(1 - dr) as usize][(1 - dc) as usize]
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        genome
-    }
+    
 
     fn get_cluster_map(&self, width: i64, height: i64) -> Vec<Vec<usize>> {
         // create two-dimensional vector to store the cluster. Every pixel has a cluster id assigned

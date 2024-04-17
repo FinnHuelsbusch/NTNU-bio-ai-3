@@ -1,8 +1,11 @@
 use rand::Rng;
 
-use crate::{config::Config, individual::{Connection, Genome}, population::Population};
-
-
+use crate::{
+    config::Config,
+    global_data::{ self, GlobalData },
+    individual::{ Connection, Genome },
+    population::Population,
+};
 
 fn flip_one_bit(genome: &mut Genome) {
     let mut rng = rand::thread_rng();
@@ -18,35 +21,31 @@ fn flip_one_bit(genome: &mut Genome) {
     genome[index] = new_connection;
 }
 
-pub fn mutate(
-    population: &mut Population,
-    config: &Config,
-) {
+pub fn mutate(population: &mut Population, config: &Config, global_data: &GlobalData) {
     let mut rng = rand::thread_rng();
     for mutation_config in config.mutations.iter() {
         // Calculate the number of crossovers which should happen for the specific config
-        let number_of_mutations: u64 = ((config.population_size as f64)
-            * mutation_config.probability.unwrap())
-        .ceil() as u64;
+        let number_of_mutations: u64 = (
+            (config.population_size as f64) * mutation_config.probability.unwrap()
+        ).ceil() as u64;
 
         println!("Number of mutations: {:?}", number_of_mutations);
-        println!("Mutation probability: {:?}", mutation_config.probability); 
+        println!("Mutation probability: {:?}", mutation_config.probability);
         for _ in 0..number_of_mutations {
             let individual_index: usize = rng.gen_range(0..config.population_size);
             let child_genome = &mut population[individual_index].genome;
             match mutation_config.name.as_str() {
                 "flip_one_bit" => {
-                    flip_one_bit(child_genome)
+                    flip_one_bit(child_genome);
                 }
-                _ => panic!(
-                    "Didn't have an Implementation for mutation function: {:?}",
-                    mutation_config.name.as_str()
-                ),
-            };
-            
+                _ =>
+                    panic!(
+                        "Didn't have an Implementation for mutation function: {:?}",
+                        mutation_config.name.as_str()
+                    ),
+            }
 
-            population[individual_index].update_objectives();
-            
+            population[individual_index].update_objectives(config, global_data);
         }
     }
 }

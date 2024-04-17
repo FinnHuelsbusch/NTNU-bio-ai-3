@@ -3,14 +3,14 @@ use rand::Rng;
 use crate::{
     config::Config,
     individual::Individual,
-    population::{non_dominated_sort, Population},
+    population::{ non_dominated_sort, Population },
 };
 
 fn tournament_selection(
     population: &Population,
     population_size: usize,
     tournament_size: usize,
-    tournament_probability: f64,
+    tournament_probability: f64
 ) -> Population {
     let mut new_population: Population = Vec::with_capacity(population_size);
     let mut rng = rand::thread_rng();
@@ -30,7 +30,7 @@ fn tournament_selection(
             if sorted_tournament.len() > 1 {
                 let rank = rng.gen_range(1..sorted_tournament.len());
                 &sorted_tournament[rank][rng.gen_range(0..sorted_tournament[rank].len())]
-            // if the number of frontiers is 1, select a random individual from the first frontier
+                // if the number of frontiers is 1, select a random individual from the first frontier
             } else {
                 &sorted_tournament[0][rng.gen_range(0..sorted_tournament[0].len())]
             }
@@ -44,7 +44,7 @@ fn tournament_selection(
 fn full_replacement_selection(
     population: &Population,
     children: &Population,
-    population_size: usize,
+    population_size: usize
 ) -> Population {
     assert_eq!(population.len(), population_size);
     assert_eq!(children.len(), population_size);
@@ -54,24 +54,26 @@ fn full_replacement_selection(
 pub fn parent_selection(
     population: &Population,
     sorted_population: &Vec<Vec<Individual>>,
-    config: &Config,
+    config: &Config
 ) -> Population {
     let mut new_population: Population = Vec::with_capacity(config.population_size);
     if config.preserve_skyline {
         new_population.extend(sorted_population[0].clone());
     }
     let selected_population: Population = match config.parent_selection.name.as_str() {
-        "tournament" => tournament_selection(
-            &population,
-            config.population_size - new_population.len(),
-            config.parent_selection.tournament_size.unwrap(),
-            config.parent_selection.probability.unwrap(),
-        ),
+        "tournament" =>
+            tournament_selection(
+                &population,
+                config.population_size - new_population.len(),
+                config.parent_selection.tournament_size.unwrap(),
+                config.parent_selection.probability.unwrap()
+            ),
         // Handle the rest of cases
-        _ => panic!(
-            "Didn't have an Implementation for selection function: {:?}",
-            config.parent_selection.name.as_str()
-        ),
+        _ =>
+            panic!(
+                "Didn't have an Implementation for selection function: {:?}",
+                config.parent_selection.name.as_str()
+            ),
     };
     new_population.extend(selected_population);
     new_population
@@ -80,14 +82,10 @@ pub fn parent_selection(
 pub fn survivor_selection(
     parents: &Population,
     children: &Population,
-    config: &Config,
+    config: &Config
 ) -> Population {
     let selection_population: Population;
-    if config
-        .survivor_selection
-        .combine_parents_and_offspring
-        .unwrap_or(false)
-    {
+    if config.survivor_selection.combine_parents_and_offspring.unwrap_or(false) {
         let mut combined_population: Population = parents.clone();
         combined_population.extend(children.clone());
         selection_population = combined_population;
@@ -106,20 +104,31 @@ pub fn survivor_selection(
         // Match a single value
         "fullReplacement" => {
             if config.preserve_skyline {
-                panic!("Full Replacement selection is not compatible with preserving the skyline.")
+                panic!("Full Replacement selection is not compatible with preserving the skyline.");
             }
             full_replacement_selection(parents, children, config.population_size)
         }
         "tournament" => {
-            tournament_selection(&selection_population,
-                                config.population_size - new_population.len(),
-                                config.survivor_selection.tournament_size.unwrap_or_else(|| panic!("You need to specify the tournament size if you are using tournament selection for survivor selection.")),
-                                config.survivor_selection.probability.unwrap_or_else(|| panic!("You need to specify the tournament probability if you are using tournament selection for survivor selection.")))
+            tournament_selection(
+                &selection_population,
+                config.population_size - new_population.len(),
+                config.survivor_selection.tournament_size.unwrap_or_else(||
+                    panic!(
+                        "You need to specify the tournament size if you are using tournament selection for survivor selection."
+                    )
+                ),
+                config.survivor_selection.probability.unwrap_or_else(||
+                    panic!(
+                        "You need to specify the tournament probability if you are using tournament selection for survivor selection."
+                    )
+                )
+            )
         }
-        _ => panic!(
-            "Didn't have an Implementation for selection function: {:?}",
-            config.parent_selection.name.as_str()
-        ),
+        _ =>
+            panic!(
+                "Didn't have an Implementation for selection function: {:?}",
+                config.parent_selection.name.as_str()
+            ),
     };
     new_population.extend(selected_population);
     new_population

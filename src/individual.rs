@@ -1,8 +1,13 @@
-use std::{ cmp::Ordering, collections::{BinaryHeap, HashMap, HashSet}, vec };
-use image::{imageops::rotate180, RgbImage};
-use rand::{random, Rng};
+use std::{ cmp::Ordering, collections::{ BinaryHeap, HashMap, HashSet }, vec };
+use image::{ imageops::rotate180, ImageBuffer, Rgb, RgbImage };
+use rand::{ random, Rng };
 
-use crate::{ config::Config, distance::get_nearest_neighbor_value, utils::show };
+use crate::{
+    config::{ self, Config },
+    distance::{ get_nearest_neighbor_value, EuclideanDistanceMap },
+    global_data::{ self, GlobalData },
+    utils::show,
+};
 
 // create a enum
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
@@ -70,38 +75,36 @@ fn get_connected_pixels_for_pixel(
 
 #[derive(Debug, Clone)]
 pub struct Individual {
-    pub rgb_image: image::RgbImage,
     pub genome: Genome,
 
     // penalty
     pub edge_value_fitness: f64,
     pub connectivity_fitness: f64,
     pub overall_deviation_fitness: f64,
-    pub euclidean_distance: Vec<Vec<Vec<Vec<f64>>>>,
 }
 
-
-
 impl Individual {
-    pub fn new(config: &Config, distance_map: Vec<Vec<Vec<Vec<f64>>>>) -> Individual {
-        let rgb_image = Individual::open_image_as_rgb(&config.picture_path);
+    pub fn new(config: &Config, global_data: &GlobalData) -> Individual {
         let genome: Genome;
 
         match config.initialization_method.as_str() {
-            "random" => genome = Individual::init_random_genome(&rgb_image),
-            "mst" => genome = Individual::init_mst(&rgb_image, &distance_map),
+            "random" => {
+                genome = Individual::init_random_genome(global_data.rgb_image);
+            }
+            "mst" => {
+                genome = Individual::init_mst(
+                    global_data.rgb_image,
+                    global_data.euclidean_distance_map
+                );
+            }
             _ => panic!("Invalid initialization method"),
-            
         }
 
-
         Individual {
-            rgb_image,
             genome,
             edge_value_fitness: 0.0,
             connectivity_fitness: 0.0,
             overall_deviation_fitness: 0.0,
-            euclidean_distance: distance_map,
         }
     }
 
@@ -136,7 +139,7 @@ impl Individual {
             row: usize,
             column: usize,
             direction: Connection,
-            distance: f64
+            distance: f64,
         }
 
         impl PartialEq for MSTelement {
@@ -144,26 +147,25 @@ impl Individual {
                 self.distance == other.distance
             }
         }
-        
+
         impl Eq for MSTelement {}
-        
+
         impl PartialOrd for MSTelement {
             fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
                 self.distance.partial_cmp(&other.distance)
             }
         }
-        
+
         impl Ord for MSTelement {
             fn cmp(&self, other: &Self) -> Ordering {
                 self.distance.partial_cmp(&other.distance).unwrap_or(Ordering::Equal)
             }
         }
 
-        
-
         // init the genome with none
-        let mut genome = vec![Connection::None; (rgb_image.width() * rgb_image.height()).try_into().unwrap()];
-        let mut unseen_pixels: HashSet<(usize,usize)> = HashSet::new();
+        let mut genome =
+            vec![Connection::None; (rgb_image.width() * rgb_image.height()).try_into().unwrap()];
+        let mut unseen_pixels: HashSet<(usize, usize)> = HashSet::new();
         for row in 0..rgb_image.height() {
             for column in 0..rgb_image.width() {
                 unseen_pixels.insert((row as usize, column as usize));
@@ -172,23 +174,23 @@ impl Individual {
         let mut mst: BinaryHeap<MSTelement> = BinaryHeap::new();
         // chose a random pixel to start
         let start_row = rand::thread_rng().gen_range(0..rgb_image.height()) as usize;
-        let start_column = rand::thread_rng().gen_range(0..rgb_image.width()) as usize; 
+        let start_column = rand::thread_rng().gen_range(0..rgb_image.width()) as usize;
         unseen_pixels.remove(&(start_row, start_column));
         // add the start pixel to the mst
         if start_row > 0 {
             mst.push(MSTelement {
-                row: start_row -1,
+                row: start_row - 1,
                 column: start_column,
                 direction: Connection::Down,
-                distance: distance_map[start_row][start_column][0][1]
+                distance: distance_map[start_row][start_column][0][1],
             });
         }
-        if start_row < rgb_image.height() as usize - 1 {
+        if start_row < (rgb_image.height() as usize) - 1 {
             mst.push(MSTelement {
                 row: start_row + 1,
                 column: start_column,
                 direction: Connection::Up,
-                distance: distance_map[start_row][start_column][2][1]
+                distance: distance_map[start_row][start_column][2][1],
             });
         }
         if start_column > 0 {
@@ -196,15 +198,15 @@ impl Individual {
                 row: start_row,
                 column: start_column - 1,
                 direction: Connection::Right,
-                distance: distance_map[start_row][start_column][1][0]
+                distance: distance_map[start_row][start_column][1][0],
             });
         }
-        if start_column < rgb_image.width() as usize - 1 {
+        if start_column < (rgb_image.width() as usize) - 1 {
             mst.push(MSTelement {
                 row: start_row,
                 column: start_column + 1,
                 direction: Connection::Left,
-                distance: distance_map[start_row][start_column][1][2]
+                distance: distance_map[start_row][start_column][1][2],
             });
         }
 
@@ -232,11 +234,9 @@ impl Individual {
         genome
     }
 
-    fn get_cluster_map(&self) -> Vec<Vec<usize>> {
+    fn get_cluster_map(&self, width: i64, height: i64) -> Vec<Vec<usize>> {
         // create two-dimensional vector to store the cluster. Every pixel has a cluster id assigned
 
-        let width: i64 = self.rgb_image.width().try_into().unwrap();
-        let height: i64 = self.rgb_image.height().try_into().unwrap();
         let mut cluster_map: Vec<Vec<usize>> =
             vec![
                 vec![0; width as usize];
@@ -273,7 +273,7 @@ impl Individual {
                 }
 
                 for pixel in connected_pixels.into_iter() {
-                    // TODO evaluate if it is faster to check if the pixel is already assigned to a cluster and break as soon as the first pixel is found. 
+                    // TODO evaluate if it is faster to check if the pixel is already assigned to a cluster and break as soon as the first pixel is found.
                     let column = (pixel % width) as usize;
                     let row = (pixel / width) as usize;
                     cluster_map[row][column] = cluster_id;
@@ -284,12 +284,16 @@ impl Individual {
         cluster_map
     }
 
-    pub fn get_segments_image(&self) -> RgbImage {
-        let width: usize = self.rgb_image.width().try_into().unwrap();
-        let height: usize = self.rgb_image.height().try_into().unwrap();
-
-        let clustered_image = self.get_cluster_map();
-        let mut image = self.rgb_image.clone();
+    pub fn get_segments_image(&self, global_data: &GlobalData) -> RgbImage {
+        let clustered_image = self.get_cluster_map(
+            global_data.width as i64,
+            global_data.height as i64
+        );
+        let mut image = ImageBuffer::from_pixel(
+            global_data.width as u32,
+            global_data.height as u32,
+            Rgb([0u8, 0u8, 0u8])
+        );
 
         let colorpalett = vec![
             (25, 200, 56),
@@ -300,50 +304,51 @@ impl Individual {
             (163, 163, 163),
             (255, 195, 0),
             (0, 214, 255),
-            (1, 62, 255), 
+            (1, 62, 255),
             (255, 123, 0)
         ];
 
-
-        for row in 0..height as usize {
-            for column in 0..width as usize {
+        for row in 0..global_data.height {
+            for column in 0..global_data.width {
                 let pixel = image.get_pixel_mut(column as u32, row as u32);
                 let segment = clustered_image[row][column];
                 let color = colorpalett[segment % colorpalett.len()];
                 *pixel = image::Rgb([color.0, color.1, color.2]);
-
             }
         }
 
         image
     }
 
-    pub fn update_objectives(&mut self) {
+    pub fn update_objectives(&mut self, config: &Config, global_data: &GlobalData) {
         // get the phenotype for the image
-        let clustered_image = self.get_cluster_map();
-
-        let width: u32 = self.rgb_image.width().try_into().unwrap();
-        let height: u32 = self.rgb_image.height().try_into().unwrap();
+        let clustered_image = self.get_cluster_map(
+            global_data.width as i64,
+            global_data.height as i64
+        );
 
         // define result values for the three objectives
         let mut edge_value_fitness: f64 = 0.0;
         let mut connectivity_fitness: f64 = 0.0;
         let mut overall_deviation_fitness: f64 = 0.0;
 
+        let rgb_image: &RgbImage = global_data.rgb_image;
+        let euclidean_distance_map: &EuclideanDistanceMap = global_data.euclidean_distance_map;
+
         // Map which holds the sums for each color for all pixels in one cluster (key: cluster_id, (sum_r, sum_g, sum_b, number_of_pixels))
         let mut overall_deviation_map: HashMap<usize, (f64, f64, f64, u32)> = HashMap::new();
 
         // Calculate Objective: Edge Value & Connectivity
         // Bot need to loop over all pixels, get the immediate neighbors and do something if they are not in the same segment
-        for row in 0..height as usize {
-            for column in 0..width as usize {
+        for row in 0..global_data.height {
+            for column in 0..global_data.width {
                 for x_offset in -1 as i32..=1 {
                     for y_offset in -1 as i32..=1 {
                         if
                             (row == 0 && y_offset == -1) ||
-                            ((row as u32) == height - 1 && y_offset == 1) ||
+                            (row == global_data.height - 1 && y_offset == 1) ||
                             (column == 0 && x_offset == -1) ||
-                            ((column as u32) == width - 1 && x_offset == 1)
+                            (column == global_data.width - 1 && x_offset == 1)
                         {
                             continue;
                         }
@@ -357,7 +362,7 @@ impl Individual {
                         }
                         // Edge Value := get the euclidian distance for all the neighbors which are not in the same segment
                         edge_value_fitness +=
-                            self.euclidean_distance[row][column][(y_offset + 1) as usize]
+                            euclidean_distance_map[row][column][(y_offset + 1) as usize]
                                 [(x_offset + 1) as usize];
 
                         // Connectivity Value
@@ -370,15 +375,15 @@ impl Individual {
                 overall_deviation_map
                     .entry(clustered_image[row][column])
                     .and_modify(|(sum_red, sum_green, sum_blue, count)| {
-                        *sum_red += self.rgb_image.get_pixel(column as u32, row as u32)[0] as f64;
-                        *sum_green += self.rgb_image.get_pixel(column as u32, row as u32)[1] as f64;
-                        *sum_blue += self.rgb_image.get_pixel(column as u32, row as u32)[2] as f64;
+                        *sum_red += rgb_image.get_pixel(column as u32, row as u32)[0] as f64;
+                        *sum_green += rgb_image.get_pixel(column as u32, row as u32)[1] as f64;
+                        *sum_blue += rgb_image.get_pixel(column as u32, row as u32)[2] as f64;
                         *count += 1;
                     })
                     .or_insert((
-                        self.rgb_image.get_pixel(column as u32, row as u32)[0] as f64,
-                        self.rgb_image.get_pixel(column as u32, row as u32)[1] as f64,
-                        self.rgb_image.get_pixel(column as u32, row as u32)[2] as f64,
+                        rgb_image.get_pixel(column as u32, row as u32)[0] as f64,
+                        rgb_image.get_pixel(column as u32, row as u32)[1] as f64,
+                        rgb_image.get_pixel(column as u32, row as u32)[2] as f64,
                         1,
                     ));
             }
@@ -399,9 +404,9 @@ impl Individual {
         // formular states iterate of all pixels in all segments, which translates to loop over all pixels and get the segment for the pixel
         // for every pixel get the distance to the centroid pixel and add it to the deviation
         overall_deviation_fitness = 0.0;
-        for row in 0..height as usize {
-            for column in 0..width as usize {
-                let current_pixel = self.rgb_image.get_pixel(column as u32, row as u32);
+        for row in 0..global_data.height as usize {
+            for column in 0..global_data.width as usize {
+                let current_pixel = rgb_image.get_pixel(column as u32, row as u32);
                 let centroid_pixel = cluster_centroid_map
                     .get(&clustered_image[row][column])
                     .unwrap();

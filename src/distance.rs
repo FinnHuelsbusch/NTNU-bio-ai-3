@@ -1,5 +1,7 @@
 use image::{ Rgb, RgbImage };
 
+pub type EuclideanDistanceMap = Vec<Vec<Vec<Vec<f64>>>>;
+
 pub fn euclidean_distance(pixel_a: &Rgb<u8>, pixel_b: &Rgb<u8>) -> f64 {
     let red_difference = pixel_a[0].abs_diff(pixel_b[0]) as u64;
     let green_difference = pixel_a[1].abs_diff(pixel_b[1]) as u64;
@@ -11,11 +13,11 @@ pub fn euclidean_distance(pixel_a: &Rgb<u8>, pixel_b: &Rgb<u8>) -> f64 {
 }
 
 pub fn calculate_euclidean_distance_map_for_neighbors(
-    rgb_image: RgbImage
-) -> Vec<Vec<Vec<Vec<f64>>>> {
+    rgb_image: &RgbImage
+) -> EuclideanDistanceMap {
     let height = rgb_image.height();
     let width = rgb_image.width();
-    let mut euclidean_distance_map =
+    let mut euclidean_distance_map: EuclideanDistanceMap =
         vec![
         vec![
             vec![

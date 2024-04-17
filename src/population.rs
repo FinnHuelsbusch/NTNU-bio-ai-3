@@ -1,20 +1,21 @@
+use image::RgbImage;
+
 use crate::{
     config::Config,
-    distance::calculate_euclidean_distance_map_for_neighbors,
+    distance::{ calculate_euclidean_distance_map_for_neighbors, EuclideanDistanceMap },
+    global_data::{ self, GlobalData },
     individual::Individual,
 };
 
 pub type Population = Vec<Individual>;
 
-pub fn initialize_random_population(config: &Config) -> Population {
+pub fn initialize_random_population(config: &Config, global_data: &GlobalData) -> Population {
     // calculate euclidian distance map for the image and copy it to each individual
-    let rgb_image = Individual::open_image_as_rgb(&config.picture_path);
-    let distance_map = calculate_euclidean_distance_map_for_neighbors(rgb_image);
 
-    let mut population = Vec::new();
+    let mut population = Vec::with_capacity(config.population_size);
     for _ in 0..config.population_size {
-        let mut individual = Individual::new(&config, distance_map.clone());
-        individual.update_objectives();
+        let mut individual = Individual::new(&config, global_data);
+        individual.update_objectives(config, global_data);
         population.push(individual);
     }
     population
@@ -23,7 +24,7 @@ pub fn initialize_random_population(config: &Config) -> Population {
 pub fn non_dominated_sort(population: &Population) -> Vec<Vec<Individual>> {
     let mut working_population = population.clone();
     let mut fronts: Vec<Vec<Individual>> = vec![];
-    while working_population.is_empty() == false{
+    while working_population.is_empty() == false {
         let mut dominated_by: Vec<Vec<usize>> = vec![Vec::new(); working_population.len()];
 
         for i in 0..working_population.len() {
@@ -49,8 +50,6 @@ pub fn non_dominated_sort(population: &Population) -> Vec<Vec<Individual>> {
         fronts.push(current_front);
 
         working_population = new_working_population;
-        
-
     }
     fronts
 }

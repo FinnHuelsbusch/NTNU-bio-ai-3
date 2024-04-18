@@ -148,7 +148,7 @@ pub fn survivor_selection(
                 let mut remaining_population: Vec<Individual> = Vec::new();
                 for individual in sorted_population[i].iter() {
                     remaining_population.push(individual.clone());
-                    if nsga2_population.len() == config.population_size {
+                    if nsga2_population.len() + remaining_population.len() == config.population_size {
                         break;
                     }
                 }

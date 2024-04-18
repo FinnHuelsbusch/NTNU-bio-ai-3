@@ -1,15 +1,100 @@
+use std::collections::HashMap;
+
 use rand::Rng;
 
 use crate::{
     config::Config,
-    global_data::GlobalData,
-    individual::{ Connection, Genome },
+    global_data::{ self, GlobalData },
+    individual::{ Connection, Genome, Individual },
     population::Population,
 };
 
-fn flip_one_bit(genome: &mut Genome) {
+fn get_biggest_segment_direction(
+    index: usize,
+    child: &mut Individual,
+    global_data: &GlobalData,
+    inverse: bool
+) -> Connection {
+    let segmentation_map = child.get_cluster_map(
+        global_data.width as i64,
+        global_data.height as i64
+    );
+
+    let mut segmentation_size_map: HashMap<usize, u32> = HashMap::new();
+
+    for y in 0..global_data.height {
+        for x in 0..global_data.width {
+            segmentation_size_map
+                .entry(segmentation_map[y][x])
+                .and_modify(|segment_size| {
+                    *segment_size += 1;
+                })
+                .or_insert(1);
+        }
+    }
+
+    let mut highest = 0;
+    let mut highest_direction = Connection::None;
+    let mut lowest = 0xffffffff;
+    let mut lowest_direction = Connection::None;
+
+    let column = (index % global_data.width) as i32;
+    let row = (index / global_data.width) as i32;
+
+    for position in [
+        (-1 as i32, 0 as i32, Connection::Up),
+        (0, -1, Connection::Left),
+        (0, 1, Connection::Right),
+        (1, 0, Connection::Down),
+    ] {
+        if
+            (row == 0 && position.0 == -1) ||
+            (row == (global_data.height as i32) - 1 && position.0 == 1) ||
+            (column == 0 && position.1 == -1) ||
+            (column == (global_data.width as i32) - 1 && position.1 == 1)
+        {
+            continue;
+        }
+
+        let segment_id =
+            segmentation_map[(row + position.0) as usize][(column + position.1) as usize];
+        let number_of_segments = *segmentation_size_map.get(&segment_id).unwrap();
+
+        if number_of_segments > highest {
+            highest = number_of_segments;
+            highest_direction = position.2;
+        }
+
+        if number_of_segments < lowest {
+            lowest = number_of_segments;
+            lowest_direction = position.2;
+        }
+    }
+
+    return if inverse { lowest_direction } else { highest_direction };
+}
+
+fn flip_to_biggest_segment(child: &mut Individual, global_data: &GlobalData) {
     let mut rng = rand::thread_rng();
-    let index = rng.gen_range(0..genome.len());
+    let index = rng.gen_range(0..child.genome.len());
+
+    let highest_direction = get_biggest_segment_direction(index, child, global_data, false);
+
+    child.genome[index] = highest_direction;
+}
+
+fn flip_to_smallest_segment(child: &mut Individual, global_data: &GlobalData) {
+    let mut rng = rand::thread_rng();
+    let index = rng.gen_range(0..child.genome.len());
+
+    let lowest_direction = get_biggest_segment_direction(index, child, global_data, true);
+
+    child.genome[index] = lowest_direction;
+}
+
+fn flip_one_bit(child: &mut Individual) {
+    let mut rng = rand::thread_rng();
+    let index = rng.gen_range(0..child.genome.len());
     let new_connection = match rand::thread_rng().gen_range(0..5) {
         0 => Connection::None,
         1 => Connection::Up,
@@ -18,7 +103,44 @@ fn flip_one_bit(genome: &mut Genome) {
         4 => Connection::Right,
         _ => panic!("Invalid connection value"),
     };
-    genome[index] = new_connection;
+    child.genome[index] = new_connection;
+}
+
+fn flip_to_smallest_deviation(child: &mut Individual, global_data: &GlobalData) {
+    let mut rng = rand::thread_rng();
+    let index = rng.gen_range(0..child.genome.len());
+
+    let mut smallest_deviation = f64::INFINITY;
+    let mut smallest_direction = Connection::None;
+
+    for position in [
+        (-1 as i32, 0 as i32, Connection::Up),
+        (0, -1, Connection::Left),
+        (0, 1, Connection::Right),
+        (1, 0, Connection::Down),
+    ] {
+        let column = (index % global_data.width) as i32;
+        let row = (index / global_data.width) as i32;
+        if
+            (row == 0 && position.0 == -1) ||
+            (row == (global_data.height as i32) - 1 && position.0 == 1) ||
+            (column == 0 && position.1 == -1) ||
+            (column == (global_data.width as i32) - 1 && position.1 == 1)
+        {
+            continue;
+        }
+
+        let deviation =
+            global_data.euclidean_distance_map[row as usize][column as usize]
+                [(position.0 + 1) as usize][(position.1 + 1) as usize];
+
+        if deviation < smallest_deviation {
+            smallest_deviation = deviation;
+            smallest_direction = position.2;
+        }
+    }
+
+    child.genome[index] = smallest_direction;
 }
 
 pub fn mutate(population: &mut Population, config: &Config, global_data: &GlobalData) {
@@ -31,10 +153,19 @@ pub fn mutate(population: &mut Population, config: &Config, global_data: &Global
 
         for _ in 0..number_of_mutations {
             let individual_index: usize = rng.gen_range(0..config.population_size);
-            let child_genome = &mut population[individual_index].genome;
+            let child = &mut population[individual_index];
             match mutation_config.name.as_str() {
                 "flip_one_bit" => {
-                    flip_one_bit(child_genome);
+                    flip_one_bit(child);
+                }
+                "flip_to_smallest_segment" => {
+                    flip_to_smallest_segment(child, global_data);
+                }
+                "flip_to_biggest_segment" => {
+                    flip_to_biggest_segment(child, global_data);
+                }
+                "flip_to_smallest_deviation" => {
+                    flip_to_smallest_deviation(child, global_data);
                 }
                 _ =>
                     panic!(

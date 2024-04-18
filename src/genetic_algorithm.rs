@@ -125,27 +125,20 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         print!("MUT|");
         io::stdout().flush().unwrap();
         mutate(&mut children, config, global_data);
+        
+        print!("EVAL|");
+        io::stdout().flush().unwrap();
+        for individual in children.iter_mut(){
+            if individual.needs_update() {
+                individual.update_objectives(global_data);
+            }
+        }
 
         println!("SURV_SEL");
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, config);
         print!("Number of None in genes of children: ");
-        for individual in population.iter_mut(){
-            if individual.needs_update() {
-                individual.update_objectives(global_data);
-            }
-        }
-        // print number of None in gene of each individual
-        for individual in children.iter_mut() {
-            let mut none_count = 0;
-            for gene in individual.genome.iter() {
-                if gene == &individual::Connection::None {
-                    none_count += 1;
-                }
-            }
-            print!("{:?},", none_count);
-        }
-        println!();
+    
     }
     let pareto_fronts = non_dominated_sort(&population);
     for individual in pareto_fronts[0].iter() {

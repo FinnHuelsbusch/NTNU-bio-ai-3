@@ -29,8 +29,6 @@ pub fn mutate(population: &mut Population, config: &Config, global_data: &Global
             (config.population_size as f64) * mutation_config.probability.unwrap()
         ).ceil() as u64;
 
-        println!("Number of mutations: {:?}", number_of_mutations);
-        println!("Mutation probability: {:?}", mutation_config.probability);
         for _ in 0..number_of_mutations {
             let individual_index: usize = rng.gen_range(0..config.population_size);
             let child_genome = &mut population[individual_index].genome;

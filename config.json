@@ -2,7 +2,8 @@
   "picture_path": "./Project 3 training_images/86016/Test image.jpg",
   "population_size": 50,
   "number_of_generations": 20,
-  "initialization_method": "random",
+  "initialization_method": "mst",
+  "preserve_skyline": false,
   "parent_selection": {
     "name": "tournament",
     "tournament_size": 4,
@@ -21,9 +22,7 @@
     }
   ],
   "survivor_selection": {
-    "name": "tournament",
-    "tournament_size": 5,
-    "probability": 0.75
-  },
-  "preserve_skyline": false
+    "name": "NSGA-2",
+    "combine_parents_and_offspring": true
+  }
 }

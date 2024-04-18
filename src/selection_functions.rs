@@ -145,14 +145,50 @@ pub fn survivor_selection(
                 i += 1;
             }
             if nsga2_population.len() < config.population_size {
-                let mut remaining_population: Vec<Individual> = Vec::new();
-                for individual in sorted_population[i].iter() {
-                    remaining_population.push(individual.clone());
-                    if nsga2_population.len() + remaining_population.len() == config.population_size {
-                        break;
-                    }
+                // crowding distance assignment 
+                let mut sortable_individuals: Vec<(usize, Individual, f64)> = sorted_population[i].iter().enumerate().map(|(index, individual)| (index, individual.clone(), 0.0)).collect();
+                // calculate distance based on edge value fitness
+                sortable_individuals.sort_by(|a, b| a.1.get_objectives().0.partial_cmp(&b.1.get_objectives().0).unwrap());
+                // get minimum and maximum edge value fitness               
+                let max_edge_value_fitness = sorted_population[0].iter().max_by(|a, b| a.get_objectives().0.partial_cmp(&b.get_objectives().0).unwrap()).unwrap().get_objectives().0;
+                let min_edge_value_fitness = sorted_population[sorted_population.len() - 1].iter().min_by(|a, b| a.get_objectives().0.partial_cmp(&b.get_objectives().0).unwrap()).unwrap().get_objectives().0;
+                // assign the distance to the first and last individual
+                sortable_individuals[0].2 = f64::INFINITY;
+                sortable_individuals[sorted_population[i].len() - 1].2 = f64::INFINITY;
+                for j in 1..sortable_individuals.len() - 1 {
+                    sortable_individuals[j].2 += (sortable_individuals[j + 1].1.get_objectives().0 - sortable_individuals[j - 1].1.get_objectives().0) / (max_edge_value_fitness - min_edge_value_fitness);
                 }
-                nsga2_population.extend(remaining_population);
+
+                // calculate distance based on connectivity fitness
+                sortable_individuals.sort_by(|a, b| a.1.get_objectives().1.partial_cmp(&b.1.get_objectives().1).unwrap());
+                // get minimum and maximum connectivity fitness
+                let max_connectivity_fitness = sorted_population[sorted_population.len() - 1].iter().max_by(|a, b| a.get_objectives().1.partial_cmp(&b.get_objectives().1).unwrap()).unwrap().get_objectives().1;
+                let min_connectivity_fitness = sorted_population[0].iter().min_by(|a, b| a.get_objectives().1.partial_cmp(&b.get_objectives().1).unwrap()).unwrap().get_objectives().1;
+                // assign the distance to the first and last individual
+                sortable_individuals[0].2 = f64::INFINITY;
+                sortable_individuals[sorted_population[i].len() - 1].2 = f64::INFINITY;
+                for j in 1..sortable_individuals.len() - 1 {
+                    sortable_individuals[j].2 += (sortable_individuals[j + 1].1.get_objectives().1 - sortable_individuals[j - 1].1.get_objectives().1) / (max_connectivity_fitness - min_connectivity_fitness);
+                }
+
+                // calculate distance based on overall deviation fitness
+                sortable_individuals.sort_by(|a, b| a.1.get_objectives().2.partial_cmp(&b.1.get_objectives().2).unwrap());
+                // get minimum and maximum overall deviation fitness
+                let max_overall_deviation_fitness = sorted_population[sorted_population.len() - 1].iter().max_by(|a, b| a.get_objectives().2.partial_cmp(&b.get_objectives().2).unwrap()).unwrap().get_objectives().2;
+                let min_overall_deviation_fitness = sorted_population[0].iter().min_by(|a, b| a.get_objectives().2.partial_cmp(&b.get_objectives().2).unwrap()).unwrap().get_objectives().2;
+                // assign the distance to the first and last individual
+                sortable_individuals[0].2 = f64::INFINITY;
+                sortable_individuals[sorted_population[i].len() - 1].2 = f64::INFINITY;
+                for j in 1..sortable_individuals.len() - 1 {
+                    sortable_individuals[j].2 += (sortable_individuals[j + 1].1.get_objectives().2 - sortable_individuals[j - 1].1.get_objectives().2) / (max_overall_deviation_fitness - min_overall_deviation_fitness);
+                }
+
+                // sort by distance highest to lowest
+                sortable_individuals.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap());
+                for j in 0..config.population_size - nsga2_population.len() {
+                    nsga2_population.push(sortable_individuals[j].1.clone());
+                }
+
             }
             nsga2_population
         }

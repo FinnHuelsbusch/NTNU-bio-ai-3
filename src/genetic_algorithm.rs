@@ -116,11 +116,12 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
 
         print!("SEL|");
         io::stdout().flush().unwrap();
-        let mut parents = parent_selection(&population, &current_population_ranked, config);
+        let parents = parent_selection(&population, &current_population_ranked, config);
 
         print!("CROSS|");
         io::stdout().flush().unwrap();
-        let mut children = crossover(&mut parents, config, global_data);
+        let mut children = parents.clone();
+        crossover(&mut children, config, global_data);
 
         print!("MUT|");
         io::stdout().flush().unwrap();

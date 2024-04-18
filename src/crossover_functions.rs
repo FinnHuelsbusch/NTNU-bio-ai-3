@@ -1,22 +1,25 @@
 use crate::{ config::Config, global_data::GlobalData, individual::Genome, population::Population };
 use rand::Rng;
 
-pub fn one_point_crossover(genome1: &mut Genome, genome2: &mut Genome) -> (Genome, Option<Genome>) {
+pub fn one_point_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Genome) {
     assert_eq!(genome1.len(), genome2.len());
 
     let mut rng = rand::thread_rng();
     let rng_num: usize = rng.gen_range(0..genome1.len());
+    let mut new_genome1 = genome1.clone();
+    let mut new_genome2 = genome2.clone();
 
-    genome1[rng_num..].swap_with_slice(&mut genome2[rng_num..]);
 
-    (genome1.to_vec(), Some(genome2.to_vec()))
+    new_genome1[rng_num..].swap_with_slice(&mut new_genome2[rng_num..]);
+
+    (new_genome1.to_vec(), new_genome2.to_vec())
 }
 
 pub fn n_point_crossover(
     genome1: &Genome,
     genome2: &Genome,
     number_of_slices: usize
-) -> (Genome, Option<Genome>) {
+) -> (Genome, Genome) {
     assert_eq!(genome1.len(), genome2.len());
     let mut rng = rand::thread_rng();
     let mut slices = Vec::new();
@@ -39,10 +42,10 @@ pub fn n_point_crossover(
             current_parent = 1 - current_parent;
         }
     }
-    (child1, Some(child2))
+    (child1, child2)
 }
 
-pub fn uniform_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Option<Genome>) {
+pub fn uniform_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Genome) {
     assert_eq!(genome1.len(), genome2.len());
     let mut rng = rand::thread_rng();
     let mut child1 = genome1.clone();
@@ -53,16 +56,15 @@ pub fn uniform_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Option<
             child2[i] = genome1[i];
         }
     }
-    (child1, Some(child2))
+    (child1, child2)
 }
 
 pub fn crossover(
     population: &mut Population,
     config: &Config,
     global_data: &GlobalData
-) -> Population {
+) {
     let mut rng = rand::thread_rng();
-    let mut children: Population = population.clone();
     for crossover_config in config.crossovers.iter() {
         // Calculate the number of crossovers which should happen for the specific config
         let number_of_crossovers: u64 = (
@@ -78,11 +80,11 @@ pub fn crossover(
                 individual_index_b = rng.gen_range(0..config.population_size);
             }
 
-            let child_genomes: (Genome, Option<Genome>) = match crossover_config.name.as_str() {
+            let child_genomes: (Genome, Genome) = match crossover_config.name.as_str() {
                 "one_point" =>
                     one_point_crossover(
-                        &mut population[individual_index_a].genome.clone(),
-                        &mut population[individual_index_b].genome
+                        &population[individual_index_a].genome,
+                        &population[individual_index_b].genome
                     ),
                 "n_point" =>
                     n_point_crossover(
@@ -104,19 +106,11 @@ pub fn crossover(
                     ),
             };
 
-            let mut child_a = population[individual_index_a].clone();
-            child_a.genome = child_genomes.0;
-            child_a.set_needs_update();
-            children.push(child_a);
-
-            if let Some(genome) = child_genomes.1 {
-                let mut child_b = population[individual_index_b].clone();
-                child_b.genome = genome;
-                child_b.set_needs_update();
-                children.push(child_b);
-            }
+            population[individual_index_a].genome = child_genomes.0;
+            population[individual_index_a].needs_update();
+            population[individual_index_b].genome = child_genomes.1;
+            population[individual_index_b].needs_update();
+            
         }
     }
-
-    children
 }

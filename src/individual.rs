@@ -3,6 +3,7 @@ use image::{ ImageBuffer, Rgb, RgbImage };
 use rand::Rng;
 
 use crate::{
+    config::{ self, Config },
     distance::{ get_nearest_neighbor_value, EuclideanDistanceMap },
     global_data::GlobalData,
 };
@@ -223,6 +224,8 @@ pub struct Individual {
     pub genome: Genome,
     needs_update: bool,
 
+    pub fitness: f64,
+
     // penalty
     edge_value_fitness: f64,
     connectivity_fitness: f64,
@@ -236,6 +239,7 @@ impl Individual {
         Individual {
             genome,
             needs_update: true,
+            fitness: 0.0,
             edge_value_fitness: 0.0,
             connectivity_fitness: 0.0,
             overall_deviation_fitness: 0.0,
@@ -246,6 +250,7 @@ impl Individual {
         Individual {
             genome: genome.clone(),
             needs_update: true,
+            fitness: 0.0,
             edge_value_fitness: 0.0,
             connectivity_fitness: 0.0,
             overall_deviation_fitness: 0.0,
@@ -285,7 +290,7 @@ impl Individual {
         genome
     }
 
-    fn get_cluster_map(&self, width: i64, height: i64) -> Vec<Vec<usize>> {
+    pub fn get_cluster_map(&self, width: i64, height: i64) -> Vec<Vec<usize>> {
         // create two-dimensional vector to store the cluster. Every pixel has a cluster id assigned
 
         let mut cluster_map: Vec<Vec<usize>> =
@@ -366,7 +371,7 @@ impl Individual {
         image
     }
 
-    pub fn update_objectives(&mut self, global_data: &GlobalData) {
+    pub fn update_objectives(&mut self, config: &Config, global_data: &GlobalData) {
         // get the phenotype for the image
         let clustered_image = self.get_cluster_map(
             global_data.width as i64,
@@ -466,6 +471,10 @@ impl Individual {
         self.edge_value_fitness = edge_value_fitness;
         self.connectivity_fitness = connectivity_fitness;
         self.overall_deviation_fitness = overall_deviation_fitness;
+        self.fitness =
+            edge_value_fitness * config.edge_value_multiplier +
+            -connectivity_fitness * config.connectivity_multiplier +
+            -overall_deviation_fitness * config.overall_deviation_multiplier;
         self.needs_update = false;
     }
 

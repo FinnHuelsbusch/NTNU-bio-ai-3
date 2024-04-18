@@ -5,7 +5,7 @@ use crate::crossover_functions::crossover;
 use crate::global_data::GlobalData;
 use crate::individual::Individual;
 use crate::utils::show;
-use crate::individual;
+
 use crate::mutation_functions::mutate;
 use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
@@ -28,6 +28,9 @@ fn log_population_statistics(
     let mut min_overall_deviation_fitness = f64::MAX;
     let mut max_overall_deviation_fitness = f64::MIN;
     let mut avg_overall_deviation_fitness = 0.0;
+    let mut min_weighted_fitness = f64::MAX;
+    let mut max_weighted_fitness = f64::MIN;
+    let mut avg_weighted_fitness = 0.0;
     let mut file_output = String::new();
 
     for rank in 0..current_population_ranked.len() {
@@ -36,13 +39,13 @@ fn log_population_statistics(
             let edge_value_fitness = fitness.0;
             let connectivity_fitness = fitness.1;
             let overall_deviation_fitness = fitness.2;
+            let weighted_fitness = individual.fitness;
             file_output += &format!(
                 "({},{},{});",
-                edge_value_fitness, 
+                edge_value_fitness,
                 connectivity_fitness,
                 overall_deviation_fitness
             );
-            
 
             if edge_value_fitness < min_edge_value_fitness {
                 min_edge_value_fitness = edge_value_fitness;
@@ -67,6 +70,14 @@ fn log_population_statistics(
                 max_overall_deviation_fitness = overall_deviation_fitness;
             }
             avg_overall_deviation_fitness += overall_deviation_fitness;
+
+            if weighted_fitness < min_weighted_fitness {
+                min_weighted_fitness = weighted_fitness;
+            }
+            if weighted_fitness > max_weighted_fitness {
+                max_weighted_fitness = weighted_fitness;
+            }
+            avg_weighted_fitness += weighted_fitness;
         }
         file_output += "\n";
     }
@@ -79,24 +90,29 @@ fn log_population_statistics(
     avg_edge_value_fitness /= population.len() as f64;
 
     // print as table
-    println!("Statistics: | Edge Value Fitness | Connectivity Fitness | Overall Deviation Fitness");
     println!(
-        "Min:        | {:<18.2} | {:<19.2} | {:<24.2}",
-        min_edge_value_fitness,
-        min_connectivity_fitness,
-        min_overall_deviation_fitness
+        "Statistics: | Edge Value Fitness | Connectivity Fitness | Overall Deviation Fitness | Weighted Fitness"
     );
     println!(
-        "Max:        | {:<18.2} | {:<19.2} | {:<24.2}",
+        "Best:       | {:<18.2} | {:<20.2} | {:<25.2} | {:<24.2}",
         max_edge_value_fitness,
-        max_connectivity_fitness,
-        max_overall_deviation_fitness
+        min_connectivity_fitness,
+        min_overall_deviation_fitness,
+        max_weighted_fitness
     );
     println!(
-        "Avg:        | {:<18.2} | {:<19.2} | {:<24.2}",
+        "Avg:        | {:<18.2} | {:<20.2} | {:<25.2} | {:<24.2}",
         avg_edge_value_fitness,
         avg_connectivity_fitness,
-        avg_overall_deviation_fitness
+        avg_overall_deviation_fitness,
+        avg_weighted_fitness
+    );
+    println!(
+        "Worst:      | {:<18.2} | {:<20.2} | {:<25.2} | {:<24.2}",
+        min_edge_value_fitness,
+        max_connectivity_fitness,
+        max_overall_deviation_fitness,
+        min_weighted_fitness
     );
 }
 
@@ -126,12 +142,12 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         print!("MUT|");
         io::stdout().flush().unwrap();
         mutate(&mut children, config, global_data);
-        
+
         print!("EVAL|");
         io::stdout().flush().unwrap();
-        for individual in children.iter_mut(){
+        for individual in children.iter_mut() {
             if individual.needs_update() {
-                individual.update_objectives(global_data);
+                individual.update_objectives(config, global_data);
             }
         }
 
@@ -139,7 +155,6 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, config);
         print!("Number of None in genes of children: ");
-    
     }
     let pareto_fronts = non_dominated_sort(&population);
     for individual in pareto_fronts[0].iter() {

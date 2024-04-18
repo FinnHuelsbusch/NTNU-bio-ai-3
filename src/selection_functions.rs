@@ -68,6 +68,12 @@ pub fn parent_selection(
                 config.parent_selection.tournament_size.unwrap(),
                 config.parent_selection.probability.unwrap()
             ),
+        "none" => {
+            if config.preserve_skyline {
+                panic!("None selection is not compatible with preserving the skyline.");
+            }
+            population.clone()
+        }
         // Handle the rest of cases
         _ =>
             panic!(

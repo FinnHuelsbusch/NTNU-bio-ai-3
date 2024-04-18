@@ -1,4 +1,4 @@
-use crate::{ config::Config, global_data::GlobalData, individual::{get_mst_genome, Individual} };
+use crate::{ config::Config, global_data::GlobalData, individual::{self, get_mst_genome, Individual} };
 
 pub type Population = Vec<Individual>;
 
@@ -9,7 +9,9 @@ pub fn initialize_population(config: &Config, global_data: &GlobalData) -> Popul
     match config.initialization_method.as_str() {
         "random" => {
             for _ in 0..config.population_size {
-                population.push(Individual::new_random(global_data));
+                let mut individual = Individual::new_random(global_data);
+                individual.update_objectives(global_data);
+                population.push(individual);
             }
         }
         "mst" => {

@@ -1,4 +1,4 @@
-use crate::{ config::Config, global_data::GlobalData, individual::{self, get_mst_genome, Individual} };
+use crate::{ config::Config, global_data::GlobalData, individual::{ get_mst_genome, Individual } };
 
 pub type Population = Vec<Individual>;
 
@@ -10,14 +10,14 @@ pub fn initialize_population(config: &Config, global_data: &GlobalData) -> Popul
         "random" => {
             for _ in 0..config.population_size {
                 let mut individual = Individual::new_random(global_data);
-                individual.update_objectives(global_data);
+                individual.update_objectives(config, global_data);
                 population.push(individual);
             }
         }
         "mst" => {
             let genome = get_mst_genome(global_data.rgb_image, global_data.euclidean_distance_map);
             let mut individual = Individual::new_with_genome(&genome);
-            individual.update_objectives(global_data);
+            individual.update_objectives(config, global_data);
             for _ in 0..config.population_size {
                 population.push(individual.clone());
             }
@@ -25,10 +25,8 @@ pub fn initialize_population(config: &Config, global_data: &GlobalData) -> Popul
         _ => {
             panic!("Invalid initialization method");
         }
-        
     }
 
-    
     population
 }
 

@@ -29,6 +29,9 @@ pub struct Config {
     pub mutations: Vec<FunctionConfig>,
     pub survivor_selection: FunctionConfig,
     pub preserve_skyline: bool,
+    pub edge_value_multiplier: f64,
+    pub connectivity_multiplier: f64,
+    pub overall_deviation_multiplier: f64,
 }
 
 pub fn initialize_config(file_path: &str) -> Config {

@@ -442,6 +442,9 @@ impl Individual {
         – x is not worse than y in all other objectives
      */
     pub fn dominates(&self, other: &Individual) -> bool {
+        if self.needs_update || other.needs_update {
+            panic!("Objectives need to be updated before comparing them");
+        }
         let better_in_atleast_one_objective =
             self.edge_value_fitness > other.edge_value_fitness || // higher score is better
             self.connectivity_fitness < other.connectivity_fitness || // lower score is better

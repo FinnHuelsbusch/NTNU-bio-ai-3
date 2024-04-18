@@ -100,7 +100,7 @@ pub fn survivor_selection(
         new_population.extend(sorted_population[0].clone());
     }
 
-    let selected_population: Population = match config.parent_selection.name.as_str() {
+    let selected_population: Population = match config.survivor_selection.name.as_str() {
         // Match a single value
         "fullReplacement" => {
             if config.preserve_skyline {
@@ -123,6 +123,32 @@ pub fn survivor_selection(
                     )
                 )
             )
+        }
+        "NSGA-2" => {
+            if config.preserve_skyline {
+                panic!("NSGA-2 selection is not compatible with preserving the skyline.");
+            }
+            if !config.survivor_selection.combine_parents_and_offspring.unwrap_or(false) {
+                panic!("NSGA-2 selection requires combining parents and offspring.");
+            }
+            let mut nsga2_population: Vec<Individual> = Vec::with_capacity(config.population_size);
+            let sorted_population = non_dominated_sort(&selection_population);
+            let mut i = 0;
+            while nsga2_population.len() + sorted_population[i].len() <= config.population_size {
+                nsga2_population.extend(sorted_population[i].clone());
+                i += 1;
+            }
+            if nsga2_population.len() < config.population_size {
+                let mut remaining_population: Vec<Individual> = Vec::new();
+                for individual in sorted_population[i].iter() {
+                    remaining_population.push(individual.clone());
+                    if nsga2_population.len() == config.population_size {
+                        break;
+                    }
+                }
+                nsga2_population.extend(remaining_population);
+            }
+            nsga2_population
         }
         _ =>
             panic!(

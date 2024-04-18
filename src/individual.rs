@@ -18,7 +18,10 @@ pub enum Connection {
 }
 pub type Genome = Vec<Connection>;
 
-pub fn get_mst_genome(rgb_image: &image::RgbImage, distance_map: &Vec<Vec<Vec<Vec<f64>>>>) -> Genome {
+pub fn get_mst_genome(
+    rgb_image: &image::RgbImage,
+    distance_map: &Vec<Vec<Vec<Vec<f64>>>>
+) -> Genome {
     #[derive(Debug)]
     struct MSTelement {
         row: usize,
@@ -98,18 +101,29 @@ pub fn get_mst_genome(rgb_image: &image::RgbImage, distance_map: &Vec<Vec<Vec<Ve
     while !unseen_pixels.is_empty() {
         let mst_element = mst.pop().unwrap();
         if unseen_pixels.remove(&(mst_element.row, mst_element.column)) {
-            genome[mst_element.row * rgb_image.width() as usize + mst_element.column] = mst_element.direction;
+            genome[mst_element.row * (rgb_image.width() as usize) + mst_element.column] =
+                mst_element.direction;
             // Add the neighbors of the pixel to the mst
-            for (row_adjustment, column_adjustment, dir) in &[(0, -1, Connection::Right), (0, 1, Connection::Left), (-1, 0, Connection::Down), (1, 0, Connection::Up)] {
-                let new_row = (mst_element.row as isize + row_adjustment) as usize;
-                let new_col = (mst_element.column as isize + column_adjustment) as usize;
-                if new_row < rgb_image.height() as usize && new_col < rgb_image.width() as usize && unseen_pixels.contains(&(new_row, new_col)) {
+            for (row_adjustment, column_adjustment, dir) in &[
+                (0, -1, Connection::Right),
+                (0, 1, Connection::Left),
+                (-1, 0, Connection::Down),
+                (1, 0, Connection::Up),
+            ] {
+                let new_row = ((mst_element.row as isize) + row_adjustment) as usize;
+                let new_col = ((mst_element.column as isize) + column_adjustment) as usize;
+                if
+                    new_row < (rgb_image.height() as usize) &&
+                    new_col < (rgb_image.width() as usize) &&
+                    unseen_pixels.contains(&(new_row, new_col))
+                {
                     mst.push(MSTelement {
                         row: new_row,
                         column: new_col,
                         direction: *dir,
-                        distance: distance_map[mst_element.row][mst_element.column][(1 - row_adjustment) as usize][(1 - column_adjustment) as usize]
-                    }); 
+                        distance: distance_map[mst_element.row][mst_element.column]
+                            [(1 - row_adjustment) as usize][(1 - column_adjustment) as usize],
+                    });
                 }
             }
         }
@@ -117,12 +131,12 @@ pub fn get_mst_genome(rgb_image: &image::RgbImage, distance_map: &Vec<Vec<Vec<Ve
     genome
 }
 
-
 fn get_connected_pixels_for_pixel(
     genome: &Genome,
     index: i64,
     width: i64,
-    seen_pixels: &mut Vec<i64>
+    seen_pixels: &mut Vec<i64>,
+    cluster_map: &Vec<Vec<usize>>
 ) -> Vec<i64> {
     if seen_pixels.contains(&index) {
         return vec![];
@@ -130,6 +144,15 @@ fn get_connected_pixels_for_pixel(
 
     seen_pixels.push(index);
     let mut connected_pixels = vec![index];
+
+    let column = (index % width) as usize;
+    let row = (index / width) as usize;
+
+    // if the current pixel already has a cluster, all following pixels will also have a cluster
+    if cluster_map[row][column] != 0 {
+        return connected_pixels;
+    }
+
     // check direction going to and follow the path
     let direction = genome[index as usize];
     match direction {
@@ -138,7 +161,13 @@ fn get_connected_pixels_for_pixel(
             // if the direction is up the index needs to be at least in the second row. So width should be at least one time in the index
             if index - width > 0 {
                 connected_pixels.append(
-                    &mut get_connected_pixels_for_pixel(genome, index - width, width, seen_pixels)
+                    &mut get_connected_pixels_for_pixel(
+                        genome,
+                        index - width,
+                        width,
+                        seen_pixels,
+                        cluster_map
+                    )
                 );
             }
         }
@@ -146,7 +175,13 @@ fn get_connected_pixels_for_pixel(
             // if the direction is down the index needs to be at least in the second to last row. So index + width should not be higher than genome length
             if index + width < (genome.len() as i64) {
                 connected_pixels.append(
-                    &mut get_connected_pixels_for_pixel(genome, index + width, width, seen_pixels)
+                    &mut get_connected_pixels_for_pixel(
+                        genome,
+                        index + width,
+                        width,
+                        seen_pixels,
+                        cluster_map
+                    )
                 );
             }
         }
@@ -154,7 +189,13 @@ fn get_connected_pixels_for_pixel(
             // if the direction is left the index needs bigger than the wrapping of the width. So index % width should give the index in a row and this needs to be bigger than 0
             if index % width > 0 {
                 connected_pixels.append(
-                    &mut get_connected_pixels_for_pixel(genome, index - 1, width, seen_pixels)
+                    &mut get_connected_pixels_for_pixel(
+                        genome,
+                        index - 1,
+                        width,
+                        seen_pixels,
+                        cluster_map
+                    )
                 );
             }
         }
@@ -162,7 +203,13 @@ fn get_connected_pixels_for_pixel(
             // if the direction is right the index needs to be less than the wrapping of the width. So index % width should give the index in a row and this needs to be less than width - 1 (width is the edge)
             if index % width < width - 1 {
                 connected_pixels.append(
-                    &mut get_connected_pixels_for_pixel(genome, index + 1, width, seen_pixels)
+                    &mut get_connected_pixels_for_pixel(
+                        genome,
+                        index + 1,
+                        width,
+                        seen_pixels,
+                        cluster_map
+                    )
                 );
             }
         }
@@ -174,7 +221,7 @@ fn get_connected_pixels_for_pixel(
 #[derive(Debug, Clone)]
 pub struct Individual {
     pub genome: Genome,
-    needs_update: bool, 
+    needs_update: bool,
 
     // penalty
     edge_value_fitness: f64,
@@ -210,7 +257,7 @@ impl Individual {
     }
 
     pub fn set_needs_update(&mut self) {
-        self.needs_update = true
+        self.needs_update = true;
     }
 
     pub fn open_image_as_rgb(image_path: &str) -> image::RgbImage {
@@ -238,8 +285,6 @@ impl Individual {
         genome
     }
 
-    
-
     fn get_cluster_map(&self, width: i64, height: i64) -> Vec<Vec<usize>> {
         // create two-dimensional vector to store the cluster. Every pixel has a cluster id assigned
 
@@ -259,19 +304,14 @@ impl Individual {
                     &self.genome,
                     (column + row * (width as usize)) as i64,
                     width,
-                    &mut vec![]
+                    &mut vec![],
+                    &cluster_map
                 );
 
-                let mut cluster_id: usize = 0;
-                for pixel in connected_pixels.clone().iter() {
-                    let column = (pixel % width) as usize;
-                    let row = (pixel / width) as usize;
-                    cluster_id = cluster_map[row][column];
-
-                    if cluster_id != 0 {
-                        break;
-                    }
-                }
+                let last_pixel = connected_pixels.last().unwrap();
+                let column = (last_pixel % width) as usize;
+                let row = (last_pixel / width) as usize;
+                let mut cluster_id: usize = cluster_map[row][column];
 
                 if cluster_id == 0 {
                     cluster_id = next_unused_cluster_id;

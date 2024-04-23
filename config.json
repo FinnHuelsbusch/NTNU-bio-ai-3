@@ -1,7 +1,7 @@
 {
-  "problem_instance": "118035",
-  "population_size": 500,
-  "number_of_generations": 300,
+  "problem_instance": "86016",
+  "population_size": 100,
+  "number_of_generations": 500,
   "edge_value_multiplier": 1.0,
   "connectivity_multiplier": 1.0,
   "overall_deviation_multiplier": 1.0,
@@ -45,7 +45,7 @@
     },
     {
       "name": "flip_to_smallest_deviation",
-      "probability": 0.08,
+      "probability": 0.2,
       "radius": 3
     }
   ],

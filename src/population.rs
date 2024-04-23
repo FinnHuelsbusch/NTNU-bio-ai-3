@@ -1,6 +1,6 @@
 use crate::{ config::Config, global_data::GlobalData, individual::{ get_mst_genome, Individual } };
 
-use std::fs::create_dir_all;
+use std::fs::{ self, create_dir_all, read_dir, remove_dir, remove_file };
 
 use std::path::Path;
 
@@ -72,6 +72,25 @@ pub fn non_dominated_sort(population: &Population) -> Vec<Vec<Individual>> {
     fronts
 }
 
+fn clear_dir(dir: &Path) {
+    if let Ok(entries) = read_dir(dir) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.is_dir() {
+                    // Recursively clear subdirectories
+                    clear_dir(&path);
+                    // Then remove the empty directory
+                    remove_dir(path).unwrap();
+                } else {
+                    // Delete files
+                    remove_file(path).unwrap();
+                }
+            }
+        }
+    }
+}
+
 pub fn save_individuals_to_files(
     front: &Vec<Individual>,
     config: &Config,
@@ -79,8 +98,10 @@ pub fn save_individuals_to_files(
 ) -> ImageResult<()> {
     // Create the folder
     let path_string = format!("./logs/result_segmentation/{}", config.problem_instance);
+
     let path = Path::new(&path_string);
-    create_dir_all(path)?; // Create the directory if it doesn't exist
+    clear_dir(path);
+    create_dir_all(path).unwrap(); // Create the directory if it doesn't exist
 
     let mut index = 0;
     for individual in front {

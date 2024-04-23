@@ -1,10 +1,10 @@
 {
   "picture_path": "./Project 3 training_images/86016/Test image.jpg",
-  "population_size": 1000,
-  "number_of_generations": 200,
+  "population_size": 50,
+  "number_of_generations": 300,
   "edge_value_multiplier": 1.0,
   "connectivity_multiplier": 1.0,
-  "overall_deviation_multiplier": 0.8,
+  "overall_deviation_multiplier": 1.0,
   "initialization_method": "mst",
   "preserve_skyline": false,
   "parent_selection": {
@@ -15,38 +15,38 @@
   "crossovers": [
     {
       "name": "one_point",
-      "probability": 0.1
+      "probability": 0.0
     },
     {
       "name": "n_point",
-      "probability": 0.1,
+      "probability": 0.0,
       "number_of_slices": 3
     },
     {
       "name": "uniform",
-      "probability": 0.1
+      "probability": 0.0
     }
   ],
   "mutations": [
     {
       "name": "flip_one_bit",
-      "probability": 0.05
+      "probability": 0.0
     },
     {
       "name": "flip_to_smallest_segment",
-      "probability": 0.05
+      "probability": 0.0
     },
     {
       "name": "flip_to_biggest_segment",
-      "probability": 0.05
+      "probability": 0.0
     },
     {
       "name": "flip_to_smallest_deviation",
-      "probability": 0.2
+      "probability": 0.3
     }
   ],
   "survivor_selection": {
-    "name": "fullReplacement",
+    "name": "NSGA-2",
     "combine_parents_and_offspring": true,
     "tournament_size": 4,
     "probability": 0.75

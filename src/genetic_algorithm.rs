@@ -158,6 +158,6 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
     }
     let pareto_fronts = non_dominated_sort(&population);
     for individual in pareto_fronts[0].iter() {
-        show(&individual.get_segments_image(global_data));
+        show(&individual.get_segment_border_image_inline(global_data));
     }
 }

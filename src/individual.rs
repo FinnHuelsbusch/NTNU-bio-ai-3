@@ -219,6 +219,44 @@ fn get_connected_pixels_for_pixel(
     connected_pixels
 }
 
+fn is_border_pixel(
+    segmentation_map: &Vec<Vec<usize>>,
+    row: usize,
+    col: usize,
+    rows: usize,
+    cols: usize,
+    current_segment: usize
+) -> bool {
+    // Check surrounding pixels for different segments
+    let up = if row == 0 { None } else { Some(segmentation_map[row - 1][col]) };
+    let down = if row == rows - 1 { None } else { Some(segmentation_map[row + 1][col]) };
+    let left = if col == 0 { None } else { Some(segmentation_map[row][col - 1]) };
+    let right = if col == cols - 1 { None } else { Some(segmentation_map[row][col + 1]) };
+
+    // Check if any surrounding pixel has a different segment
+    if let Some(segment) = up {
+        if segment != current_segment {
+            return true;
+        }
+    }
+    if let Some(segment) = down {
+        if segment != current_segment {
+            return true;
+        }
+    }
+    if let Some(segment) = left {
+        if segment != current_segment {
+            return true;
+        }
+    }
+    if let Some(segment) = right {
+        if segment != current_segment {
+            return true;
+        }
+    }
+
+    false
+}
 #[derive(Debug, Clone)]
 pub struct Individual {
     pub genome: Genome,
@@ -505,5 +543,86 @@ impl Individual {
             self.overall_deviation_fitness > other.overall_deviation_fitness;
 
         better_in_atleast_one_objective && !worse_in_any_objective
+    }
+
+    pub fn get_segment_border_image(&self, global_data: &GlobalData) -> RgbImage {
+        let mut image = ImageBuffer::from_pixel(
+            global_data.width as u32,
+            global_data.height as u32,
+            Rgb([0u8, 0u8, 0u8])
+        );
+        let border_image = self.get_border_map(global_data);
+
+        for row in 0..global_data.height {
+            for column in 0..global_data.width {
+                let pixel = image.get_pixel_mut(column as u32, row as u32);
+                let color = border_image[row][column];
+                *pixel = image::Rgb([0, 255 - color, 0]);
+            }
+        }
+
+        image
+    }
+
+    pub fn get_segment_border_image_inline(&self, global_data: &GlobalData) -> RgbImage {
+        let mut image = global_data.rgb_image.clone();
+        let border_image = self.get_border_map(global_data);
+
+        for row in 0..global_data.height {
+            for column in 0..global_data.width {
+                let pixel = image.get_pixel_mut(column as u32, row as u32);
+                let color = border_image[row][column];
+                if color == 0 {
+                    *pixel = image::Rgb([0, 255 - color, 0]);
+                }
+            }
+        }
+
+        image
+    }
+
+    pub fn get_border_map(&self, global_data: &GlobalData) -> Vec<Vec<u8>> {
+        let segmentation_map = self.get_cluster_map(
+            global_data.width as i64,
+            global_data.height as i64
+        );
+        let rows = segmentation_map.len();
+        let cols = segmentation_map[0].len();
+
+        let mut border_map: Vec<Vec<u8>> = vec![vec![0; cols]; rows];
+
+        // Iterate over each pixel
+        for i in 0..rows {
+            for j in 0..cols {
+                let current_segment = segmentation_map[i][j];
+
+                // Check if current pixel is on the border
+                let is_border = is_border_pixel(
+                    &segmentation_map,
+                    i,
+                    j,
+                    rows,
+                    cols,
+                    current_segment
+                );
+                if is_border {
+                    border_map[i][j] = 0;
+                } else {
+                    border_map[i][j] = 255;
+                }
+            }
+        }
+
+        // Fill the border of the image with 0s
+        for i in 0..rows {
+            border_map[i][0] = 0;
+            border_map[i][cols - 1] = 0;
+        }
+        for j in 0..cols {
+            border_map[0][j] = 0;
+            border_map[rows - 1][j] = 0;
+        }
+
+        border_map
     }
 }

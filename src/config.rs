@@ -35,6 +35,9 @@ pub struct Config {
     pub edge_value_multiplier: f64,
     pub connectivity_multiplier: f64,
     pub overall_deviation_multiplier: f64,
+    pub canny_hysteresis_high: f32,
+    pub canny_hysteresis_low: f32,
+    pub blur_sigma: f32,
 }
 
 pub fn initialize_config(file_path: &str) -> Config {

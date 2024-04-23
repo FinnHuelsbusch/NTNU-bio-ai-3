@@ -1,5 +1,6 @@
 use std::{ cmp::Ordering, collections::{ BinaryHeap, HashMap, HashSet }, vec };
-use image::{ ImageBuffer, Rgb, RgbImage };
+use image::{ ImageBuffer, Rgb, RgbImage, GrayImage };
+use imageproc::edges::canny;
 use rand::Rng;
 
 use crate::{
@@ -303,9 +304,15 @@ impl Individual {
         self.needs_update = true;
     }
 
-    pub fn open_image_as_rgb(image_path: &str) -> image::RgbImage {
+    pub fn open_image_as_rgb(image_path: &str) -> RgbImage {
         let img = image::open(image_path).unwrap();
         img.to_rgb8()
+    }
+
+    pub fn open_image_as_edge_map(image_path: &str, low: f32, high: f32) -> GrayImage {
+        let img = image::open(image_path).unwrap();
+
+        canny(&img.to_luma8(), low, high)
     }
 
     fn init_random_genome(rgb_image: &image::RgbImage) -> Genome {

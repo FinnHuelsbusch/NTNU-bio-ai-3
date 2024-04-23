@@ -7,6 +7,7 @@ use crate::{
     global_data::{ self, GlobalData },
     individual::{ Connection, Genome, Individual },
     population::Population,
+    utils::get_edge_weighted_random_pixel_index,
 };
 
 fn get_biggest_segment_direction(
@@ -75,8 +76,7 @@ fn get_biggest_segment_direction(
 }
 
 fn flip_to_biggest_segment(child: &mut Individual, global_data: &GlobalData) {
-    let mut rng = rand::thread_rng();
-    let index = rng.gen_range(0..child.genome.len());
+    let index = get_edge_weighted_random_pixel_index(global_data);
 
     let highest_direction = get_biggest_segment_direction(index, child, global_data, false);
 
@@ -84,17 +84,15 @@ fn flip_to_biggest_segment(child: &mut Individual, global_data: &GlobalData) {
 }
 
 fn flip_to_smallest_segment(child: &mut Individual, global_data: &GlobalData) {
-    let mut rng = rand::thread_rng();
-    let index = rng.gen_range(0..child.genome.len());
+    let index = get_edge_weighted_random_pixel_index(global_data);
 
     let lowest_direction = get_biggest_segment_direction(index, child, global_data, true);
 
     child.genome[index] = lowest_direction;
 }
 
-fn flip_one_bit(child: &mut Individual) {
-    let mut rng = rand::thread_rng();
-    let index = rng.gen_range(0..child.genome.len());
+fn flip_one_bit(child: &mut Individual, global_data: &GlobalData) {
+    let index = get_edge_weighted_random_pixel_index(global_data);
     let new_connection = match rand::thread_rng().gen_range(0..5) {
         0 => Connection::None,
         1 => Connection::Up,
@@ -110,8 +108,7 @@ fn flip_to_smallest_deviation(child: &mut Individual, global_data: &GlobalData, 
     // Cant use radius 0. Because it would not look up anything
     assert_ne!(radius, 0);
 
-    let mut rng = rand::thread_rng();
-    let index = rng.gen_range(0..child.genome.len());
+    let index = get_edge_weighted_random_pixel_index(global_data);
 
     let mut smallest_deviation = f64::INFINITY;
     let mut smallest_direction = Connection::None;
@@ -170,7 +167,7 @@ pub fn mutate(population: &mut Population, config: &Config, global_data: &Global
             let child = &mut population[individual_index];
             match mutation_config.name.as_str() {
                 "flip_one_bit" => {
-                    flip_one_bit(child);
+                    flip_one_bit(child, global_data);
                 }
                 "flip_to_smallest_segment" => {
                     flip_to_smallest_segment(child, global_data);

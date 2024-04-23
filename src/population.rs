@@ -1,5 +1,11 @@
 use crate::{ config::Config, global_data::GlobalData, individual::{ get_mst_genome, Individual } };
 
+use std::fs::create_dir_all;
+
+use std::path::Path;
+
+use image::ImageResult;
+
 pub type Population = Vec<Individual>;
 
 pub fn initialize_population(config: &Config, global_data: &GlobalData) -> Population {
@@ -64,4 +70,27 @@ pub fn non_dominated_sort(population: &Population) -> Vec<Vec<Individual>> {
         working_population = new_working_population;
     }
     fronts
+}
+
+pub fn save_individuals_to_files(
+    front: &Vec<Individual>,
+    config: &Config,
+    global_data: &GlobalData
+) -> ImageResult<()> {
+    // Create the folder
+    let path_string = format!("./logs/result_segmentation/{}", config.problem_instance);
+    let path = Path::new(&path_string);
+    create_dir_all(path)?; // Create the directory if it doesn't exist
+
+    let mut index = 0;
+    for individual in front {
+        let border_image = individual.get_segment_border_image(global_data);
+
+        border_image.save(
+            format!("./logs/result_segmentation/{}/result_{}.png", config.problem_instance, index)
+        )?;
+        index += 1;
+    }
+
+    Ok(())
 }

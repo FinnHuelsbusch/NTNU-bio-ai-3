@@ -9,7 +9,7 @@ use crate::utils::show;
 use crate::mutation_functions::mutate;
 use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
-use crate::population::{ initialize_population, non_dominated_sort };
+use crate::population::{ initialize_population, non_dominated_sort, save_individuals_to_files };
 
 fn log_population_statistics(
     population: &Population,
@@ -157,7 +157,8 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         print!("Number of None in genes of children: ");
     }
     let pareto_fronts = non_dominated_sort(&population);
-    for individual in pareto_fronts[0].iter() {
-        show(&individual.get_segment_border_image_inline(global_data));
-    }
+    let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
+    // for individual in pareto_fronts[0].iter() {
+    //     show(&individual.get_segment_border_image_inline(global_data));
+    // }
 }

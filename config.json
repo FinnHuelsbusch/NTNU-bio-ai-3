@@ -1,5 +1,5 @@
 {
-  "picture_path": "./Project 3 training_images/86016/Test image.jpg",
+  "problem_instance": "86016",
   "population_size": 50,
   "number_of_generations": 300,
   "edge_value_multiplier": 1.0,
@@ -15,34 +15,34 @@
   "crossovers": [
     {
       "name": "one_point",
-      "probability": 0.0
+      "probability": 0.1
     },
     {
       "name": "n_point",
-      "probability": 0.0,
+      "probability": 0.1,
       "number_of_slices": 3
     },
     {
       "name": "uniform",
-      "probability": 0.0
+      "probability": 0.1
     }
   ],
   "mutations": [
     {
       "name": "flip_one_bit",
-      "probability": 0.0
+      "probability": 0.05
     },
     {
       "name": "flip_to_smallest_segment",
-      "probability": 0.0
+      "probability": 0.05
     },
     {
       "name": "flip_to_biggest_segment",
-      "probability": 0.0
+      "probability": 0.05
     },
     {
       "name": "flip_to_smallest_deviation",
-      "probability": 0.3
+      "probability": 0.2
     }
   ],
   "survivor_selection": {

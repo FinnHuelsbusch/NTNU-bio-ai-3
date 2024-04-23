@@ -557,7 +557,7 @@ impl Individual {
             for column in 0..global_data.width {
                 let pixel = image.get_pixel_mut(column as u32, row as u32);
                 let color = border_image[row][column];
-                *pixel = image::Rgb([0, 255 - color, 0]);
+                *pixel = image::Rgb([color, color, color]);
             }
         }
 

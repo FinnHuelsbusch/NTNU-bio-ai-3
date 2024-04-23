@@ -33,7 +33,9 @@ fn main() {
     let config: Config = initialize_config(config_path);
     println!("{}", serde_json::to_string_pretty(&config).unwrap());
 
-    let rgb_image = Individual::open_image_as_rgb(&config.picture_path);
+    let rgb_image = Individual::open_image_as_rgb(
+        &format!("./Project 3 training_images/{}/Test image.jpg", config.problem_instance)
+    );
 
     let global_data = GlobalData {
         rgb_image: &rgb_image,

@@ -20,7 +20,7 @@ pub struct FunctionConfig {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
-    pub picture_path: String,
+    pub problem_instance: String,
     pub population_size: usize,
     pub number_of_generations: usize,
     pub initialization_method: String,

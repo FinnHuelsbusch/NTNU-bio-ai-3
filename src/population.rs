@@ -15,11 +15,14 @@ pub fn initialize_population(config: &Config, global_data: &GlobalData) -> Popul
             }
         }
         "mst" => {
-            let genome = get_mst_genome(global_data.rgb_image, global_data.euclidean_distance_map);
-            let mut individual = Individual::new_with_genome(&genome);
-            individual.update_objectives(config, global_data);
             for _ in 0..config.population_size {
-                population.push(individual.clone());
+                let genome = get_mst_genome(
+                    global_data.rgb_image,
+                    global_data.euclidean_distance_map
+                );
+                let mut individual = Individual::new_with_genome(&genome);
+                individual.update_objectives(config, global_data);
+                population.push(individual);
             }
         }
         _ => {

@@ -21,8 +21,8 @@ pub fn calculate_euclidean_distance_map_for_neighbors(
         vec![
         vec![
             vec![
-                vec![0.0; 3];
-                3
+                vec![0.0; 7];
+                7
             ];
             width as usize
         ];
@@ -32,14 +32,14 @@ pub fn calculate_euclidean_distance_map_for_neighbors(
     for row in 0..height as usize {
         for column in 0..width as usize {
             let current_pixel = rgb_image.get_pixel(column as u32, row as u32);
-            for x_offset in -1 as i32..=1 {
-                for y_offset in -1 as i32..=1 {
+            for x_offset in -3 as i32..=3 {
+                for y_offset in -3 as i32..=3 {
                     // Dont calculate boundaries
                     if
-                        (row == 0 && y_offset == -1) ||
-                        ((row as u32) == height - 1 && y_offset == 1) ||
-                        (column == 0 && x_offset == -1) ||
-                        ((column as u32) == width - 1 && x_offset == 1)
+                        (row as i32) + y_offset < 0 ||
+                        (row as i32) + y_offset > (height as i32) - 1 ||
+                        (column as i32) + x_offset < 0 ||
+                        (column as i32) + x_offset > (width as i32) - 1
                     {
                         continue;
                     }
@@ -49,8 +49,8 @@ pub fn calculate_euclidean_distance_map_for_neighbors(
                         ((row as i32) + y_offset) as u32
                     );
 
-                    euclidean_distance_map[row][column][(y_offset + 1) as usize][
-                        (x_offset + 1) as usize
+                    euclidean_distance_map[row][column][(y_offset + 3) as usize][
+                        (x_offset + 3) as usize
                     ] = euclidean_distance(current_pixel, neighbor_pixel);
                 }
             }

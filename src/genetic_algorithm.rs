@@ -88,6 +88,7 @@ fn log_population_statistics(
     avg_connectivity_fitness /= population.len() as f64;
     avg_overall_deviation_fitness /= population.len() as f64;
     avg_edge_value_fitness /= population.len() as f64;
+    avg_weighted_fitness /= population.len() as f64;
 
     // print as table
     println!(
@@ -158,7 +159,7 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
     }
     let pareto_fronts = non_dominated_sort(&population);
     let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
-    // for individual in pareto_fronts[0].iter() {
-    //     show(&individual.get_segment_border_image_inline(global_data));
-    // }
+    for individual in pareto_fronts[0].iter() {
+        show(&individual.get_segment_border_image_inline(global_data));
+    }
 }

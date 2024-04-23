@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use rand::Rng;
 
 use crate::{
-    config::Config,
+    config::{ self, Config },
     global_data::{ self, GlobalData },
     individual::{ Connection, Genome, Individual },
     population::Population,
@@ -106,7 +106,10 @@ fn flip_one_bit(child: &mut Individual) {
     child.genome[index] = new_connection;
 }
 
-fn flip_to_smallest_deviation(child: &mut Individual, global_data: &GlobalData) {
+fn flip_to_smallest_deviation(child: &mut Individual, global_data: &GlobalData, radius: usize) {
+    // Cant use radius 0. Because it would not look up anything
+    assert_ne!(radius, 0);
+
     let mut rng = rand::thread_rng();
     let index = rng.gen_range(0..child.genome.len());
 
@@ -121,21 +124,32 @@ fn flip_to_smallest_deviation(child: &mut Individual, global_data: &GlobalData) 
     ] {
         let column = (index % global_data.width) as i32;
         let row = (index / global_data.width) as i32;
-        if
-            (row == 0 && position.0 == -1) ||
-            (row == (global_data.height as i32) - 1 && position.0 == 1) ||
-            (column == 0 && position.1 == -1) ||
-            (column == (global_data.width as i32) - 1 && position.1 == 1)
-        {
-            continue;
+
+        let mut direction_deviation = f64::INFINITY;
+
+        for radius in 1..=radius as i32 {
+            let pixel_y_offset = position.0 * (radius as i32);
+            let pixel_x_offset = position.1 * (radius as i32);
+
+            if
+                (row - radius < 0 && pixel_y_offset != 0) ||
+                (row + radius > (global_data.height as i32) - 1 && pixel_y_offset != 0) ||
+                (column - radius < 0 && pixel_x_offset != 0) ||
+                (column + radius > (global_data.width as i32) - 1 && pixel_x_offset != 0)
+            {
+                continue;
+            }
+
+            direction_deviation +=
+                global_data.euclidean_distance_map[row as usize][column as usize]
+                    [(pixel_y_offset as usize) + (radius as usize)]
+                    [(pixel_x_offset as usize) + (radius as usize)];
         }
 
-        let deviation =
-            global_data.euclidean_distance_map[row as usize][column as usize]
-                [(position.0 + 1) as usize][(position.1 + 1) as usize];
+        direction_deviation /= radius as f64;
 
-        if deviation < smallest_deviation {
-            smallest_deviation = deviation;
+        if direction_deviation < smallest_deviation {
+            smallest_deviation = direction_deviation;
             smallest_direction = position.2;
         }
     }
@@ -165,7 +179,11 @@ pub fn mutate(population: &mut Population, config: &Config, global_data: &Global
                     flip_to_biggest_segment(child, global_data);
                 }
                 "flip_to_smallest_deviation" => {
-                    flip_to_smallest_deviation(child, global_data);
+                    flip_to_smallest_deviation(
+                        child,
+                        global_data,
+                        mutation_config.radius.unwrap_or(1)
+                    );
                 }
                 _ =>
                     panic!(

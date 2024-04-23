@@ -16,6 +16,9 @@ pub struct FunctionConfig {
 
     #[serde(default)]
     pub number_of_slices: Option<usize>,
+
+    #[serde(default)]
+    pub radius: Option<usize>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

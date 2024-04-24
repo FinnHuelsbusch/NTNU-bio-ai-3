@@ -1,13 +1,16 @@
 use std::collections::HashMap;
 
-use rand::Rng;
+use image::{ GenericImageView, Rgb, RgbImage };
+use imageproc::drawing::Canvas;
+use rand::{ thread_rng, Rng };
 
 use crate::{
     config::{ self, Config },
+    distance::euclidean_distance,
     global_data::{ self, GlobalData },
-    individual::{ Connection, Genome, Individual },
+    individual::{ is_border_pixel, Connection, Genome, Individual },
     population::Population,
-    utils::get_edge_weighted_random_pixel_index,
+    utils::{ get_edge_weighted_random_pixel_index, show },
 };
 
 fn get_biggest_segment_direction(
@@ -89,6 +92,141 @@ fn flip_to_smallest_segment(child: &mut Individual, global_data: &GlobalData) {
     let lowest_direction = get_biggest_segment_direction(index, child, global_data, true);
 
     child.genome[index] = lowest_direction;
+}
+
+fn connect_similar_pixels_recursive(
+    index: usize,
+    child: &mut Individual,
+    seen_pixels: &mut Vec<usize>,
+    mean: &Rgb<u8>,
+    distance_threshold: f64,
+    global_data: &GlobalData,
+    max_depth: usize
+) {
+    if max_depth == seen_pixels.len() {
+        return;
+    }
+
+    seen_pixels.push(index);
+
+    let column = (index % global_data.width) as i32;
+    let row = (index / global_data.width) as i32;
+
+    // Go trough every neighbor
+    for position in [
+        (-1 as i32, 0 as i32, Connection::Down, (255 as u8, 0 as u8, 0 as u8)),
+        (0, -1, Connection::Right, (0 as u8, 255 as u8, 0 as u8)),
+        (0, 1, Connection::Left, (0 as u8, 0 as u8, 255 as u8)),
+        (1, 0, Connection::Up, (255 as u8, 0 as u8, 255 as u8)),
+    ] {
+        // ignore edges outside of the picture
+        if
+            (row == 0 && position.0 == -1) ||
+            (row == (global_data.height as i32) - 1 && position.0 == 1) ||
+            (column == 0 && position.1 == -1) ||
+            (column == (global_data.width as i32) - 1 && position.1 == 1)
+        {
+            continue;
+        }
+
+        // calculate the index in the genome based on the position
+        let y_offset = position.0;
+        let x_offset = position.1;
+
+        let new_index = ((row + y_offset) * (global_data.width as i32) +
+            (column + x_offset)) as usize;
+
+        let column_new = (index % global_data.width) as i32;
+        let row_new = (index / global_data.width) as i32;
+
+        if seen_pixels.contains(&new_index) {
+            continue;
+        }
+
+        let euclidian_distance = euclidean_distance(
+            global_data.rgb_image.get_pixel(column_new as u32, row_new as u32),
+            mean
+        );
+
+        if euclidian_distance <= distance_threshold {
+            // if the pixel is similar. Redirect it to the current pixel
+
+            child.genome[new_index] = position.2;
+
+            // and go recursive inside it
+            connect_similar_pixels_recursive(
+                new_index,
+                child,
+                seen_pixels,
+                mean,
+                distance_threshold,
+                global_data,
+                max_depth
+            );
+        }
+    }
+}
+
+// pick a random pixel. and it all similar ones recursive without depth limit
+pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data: &GlobalData) {
+    let random_index = thread_rng().gen_range(0..child.genome.len());
+
+    let max_depth = (
+        (global_data.width as f64) *
+        (global_data.height as f64) *
+        percent_of_picture
+    ).round() as usize;
+
+    // let mut test = global_data.rgb_image.clone();
+
+    let column = (random_index % global_data.width) as i32;
+    let row = (random_index / global_data.width) as i32;
+
+    // let pixel = test.get_pixel_mut(column as u32, row as u32);
+    // *pixel = Rgb([0, 255, 255]);
+
+    // get the segment from the pixel
+    let segment_map = child.get_cluster_map(global_data.width as i64, global_data.height as i64);
+    let segment = segment_map[row as usize][column as usize];
+
+    let mut mean_pixel_color = (0.0, 0.0, 0.0);
+    let mut number_of_pixels_in_segment = 0;
+
+    // loop over every pixel of that segment
+    for y in 0..global_data.height {
+        for x in 0..global_data.width {
+            let current_segment = segment_map[y][x];
+            if current_segment != segment {
+                continue;
+            }
+
+            let current_pixel = global_data.rgb_image.get_pixel(x as u32, y as u32);
+            mean_pixel_color.0 += current_pixel.0[0] as f64;
+            mean_pixel_color.1 += current_pixel.0[1] as f64;
+            mean_pixel_color.2 += current_pixel.0[2] as f64;
+            number_of_pixels_in_segment += 1;
+        }
+    }
+
+    mean_pixel_color.0 /= number_of_pixels_in_segment as f64;
+    mean_pixel_color.1 /= number_of_pixels_in_segment as f64;
+    mean_pixel_color.2 /= number_of_pixels_in_segment as f64;
+
+    connect_similar_pixels_recursive(
+        random_index,
+        child,
+        &mut vec![],
+        &Rgb([
+            mean_pixel_color.0.round() as u8,
+            mean_pixel_color.1.round() as u8,
+            mean_pixel_color.2.round() as u8,
+        ]),
+        40.0,
+        global_data,
+        max_depth
+    );
+
+    // show(&test)
 }
 
 fn flip_one_bit(child: &mut Individual, global_data: &GlobalData) {
@@ -174,6 +312,13 @@ pub fn mutate(population: &mut Population, config: &Config, global_data: &Global
                 }
                 "flip_to_biggest_segment" => {
                     flip_to_biggest_segment(child, global_data);
+                }
+                "eat_similar" => {
+                    eat_similar(
+                        child,
+                        mutation_config.max_depth_percent_of_picture.unwrap(),
+                        global_data
+                    );
                 }
                 "flip_to_smallest_deviation" => {
                     flip_to_smallest_deviation(

@@ -6,10 +6,15 @@ use crate::global_data::GlobalData;
 use crate::individual::Individual;
 use crate::utils::show;
 
-use crate::mutation_functions::mutate;
+use crate::mutation_functions::{ eat_similar, mutate };
 use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
-use crate::population::{ initialize_population, non_dominated_sort, save_individuals_to_files };
+use crate::population::{
+    self,
+    initialize_population,
+    non_dominated_sort,
+    save_individuals_to_files,
+};
 
 fn log_population_statistics(
     population: &Population,
@@ -156,9 +161,10 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, config);
     }
+
     let pareto_fronts = non_dominated_sort(&population);
     let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
     for individual in pareto_fronts[0].iter() {
-        show(&individual.get_segments_image(global_data));
+        show(&individual.get_segment_border_image_inline(global_data));
     }
 }

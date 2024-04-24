@@ -8,7 +8,7 @@ use crate::{
     config::{ self, Config },
     distance::euclidean_distance,
     global_data::{ self, GlobalData },
-    individual::{ is_border_pixel, Connection, Genome, Individual },
+    individual::{ Connection, Genome, Individual },
     population::Population,
     utils::{ get_edge_weighted_random_pixel_index, show },
 };
@@ -221,7 +221,7 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
             mean_pixel_color.1.round() as u8,
             mean_pixel_color.2.round() as u8,
         ]),
-        40.0,
+        60.0,
         global_data,
         max_depth
     );
@@ -277,8 +277,7 @@ fn flip_to_smallest_deviation(child: &mut Individual, global_data: &GlobalData, 
 
             direction_deviation +=
                 global_data.euclidean_distance_map[row as usize][column as usize]
-                    [(pixel_y_offset  + 3) as usize]
-                    [(pixel_x_offset  + 3) as usize];
+                    [(pixel_y_offset + 3) as usize][(pixel_x_offset + 3) as usize];
         }
 
         direction_deviation /= radius as f64;

@@ -295,7 +295,7 @@ pub fn survivor_selection(
             if config.preserve_skyline {
                 panic!("Full Replacement selection is not compatible with preserving the skyline.");
             }
-            new_population
+            children.clone()
         }
         "tournament" => {
             tournament_selection(

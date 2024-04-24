@@ -1,8 +1,8 @@
 {
   "export_pareto_front": false, 
   "problem_instance": "353013",
-  "population_size": 100,
-  "number_of_generations": 50,
+  "population_size": 50,
+  "number_of_generations": 100,
   "edge_value_multiplier": 1.0,
   "connectivity_multiplier": 250.0,
   "overall_deviation_multiplier": 1.0,

@@ -157,7 +157,6 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         println!("SURV_SEL");
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, config);
-        print!("Number of None in genes of children: ");
     }
     
     
@@ -165,8 +164,8 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         let pareto_fronts = non_dominated_sort(&population);
         for individual in pareto_fronts[0].iter() {
             show(&individual.get_segment_border_image_inline(global_data));
-            let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
         }
+        let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
     } else {
         // sort the population by fitness and show the best individual
         // TODO: Ich erwarte, dass das "beste" Individuum Edge value fitness = 0 hat Connectivity fitness = 0 und Overall deviation fitness = Hoch, da der penalty auf connectivity extrem hoch ist. 
@@ -176,6 +175,7 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         println!("Best Individual Fitness: {:?}", population[0].get_fitness());
         show(&population[0].get_segment_border_image_inline(global_data));
         let _ = save_individuals_to_files(&vec![population[0].clone()], config, global_data);
+
     }
     
 }

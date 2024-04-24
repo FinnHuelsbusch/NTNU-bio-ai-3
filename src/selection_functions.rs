@@ -204,7 +204,7 @@ fn tournament_weighted(
             tournament.push(population[index].clone());
         }
 
-        tournament.sort_by(|a, b| a.get_fitness().partial_cmp(&b.get_fitness()).unwrap());
+        tournament.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
         let selected_individual = if rng.gen::<f64>() < tournament_probability {
             &tournament[0]
         } else {

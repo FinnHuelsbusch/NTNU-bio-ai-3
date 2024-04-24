@@ -3,9 +3,7 @@ use std::cmp::Ordering;
 use rand::Rng;
 
 use crate::{
-    config::Config,
-    individual::Individual,
-    population::{ self, non_dominated_sort, Population },
+    config::Config, global_data, individual::{self, Individual}, population::{ self, non_dominated_sort, Population }
 };
 
 fn tournament_selection(
@@ -161,6 +159,10 @@ fn roulett_wheel_weighted(
         if fitness > maximum_fitness {
             maximum_fitness = fitness;
         }
+    }
+    if minimum_fitness == maximum_fitness {
+        println!("All individuals have the same fitness value. -> Returning the population as is.");
+        return population.clone();
     }
     // Calculate the probability of each individual
     let mut probabilities: Vec<f64> = Vec::with_capacity(population.len());

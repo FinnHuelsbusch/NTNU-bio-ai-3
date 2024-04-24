@@ -155,8 +155,6 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         println!("SURV_SEL");
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, config);
-
-        show(&population[0].get_segments_image(global_data));
     }
     let pareto_fronts = non_dominated_sort(&population);
     let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);

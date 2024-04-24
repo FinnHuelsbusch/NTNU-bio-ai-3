@@ -172,9 +172,10 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         // TODO: Ich erwarte, dass das "beste" Individuum Edge value fitness = 0 hat Connectivity fitness = 0 und Overall deviation fitness = Hoch, da der penalty auf connectivity extrem hoch ist. 
         // Das ganze sollte demnach einem Bild entsprechen, welches nur aus einem einzigen Segment besteht, welches die gesamte Fläche des Bildes einnimmt.
         // Unten wird bei mir auch die fitness wie erwartet ausgegeben, jedoch hat das Bild viele Kleine Segmente, was nicht sein sollte.
-        population.sort_by(|a, b| a.get_objectives().1.partial_cmp(&b.get_objectives().1).unwrap());
-        println!("Best Individual Fitness: {:?}", population[0].get_objectives());
+        population.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
+        println!("Best Individual Fitness: {:?}", population[0].get_fitness());
         show(&population[0].get_segment_border_image_inline(global_data));
+        let _ = save_individuals_to_files(&vec![population[0].clone()], config, global_data);
     }
     
 }

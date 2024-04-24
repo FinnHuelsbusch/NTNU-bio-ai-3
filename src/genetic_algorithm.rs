@@ -1,9 +1,11 @@
 use std::io::{ self, Write };
 
+use image::RgbImage;
+
 use crate::crossover_functions::crossover;
 
 use crate::global_data::GlobalData;
-use crate::individual::Individual;
+use crate::individual::{ Individual };
 use crate::utils::show;
 
 use crate::mutation_functions::{ eat_similar, mutate };
@@ -44,7 +46,7 @@ fn log_population_statistics(
             let edge_value_fitness = fitness.0;
             let connectivity_fitness = fitness.1;
             let overall_deviation_fitness = fitness.2;
-            let weighted_fitness = individual.fitness;
+            let weighted_fitness = individual.get_fitness();
             file_output += &format!(
                 "({},{},{});",
                 edge_value_fitness,
@@ -162,9 +164,20 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         population = survivor_selection(&population, &children, config);
     }
 
-    let pareto_fronts = non_dominated_sort(&population);
-    let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
-    for individual in pareto_fronts[0].iter() {
-        show(&individual.get_segment_border_image_inline(global_data));
+    if config.export_pareto_front {
+        let pareto_fronts = non_dominated_sort(&population);
+        for individual in pareto_fronts[0].iter() {
+            show(&individual.get_segment_border_image_inline(global_data));
+        }
+        let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
+    } else {
+        // sort the population by fitness and show the best individual
+        // TODO: Ich erwarte, dass das "beste" Individuum Edge value fitness = 0 hat Connectivity fitness = 0 und Overall deviation fitness = Hoch, da der penalty auf connectivity extrem hoch ist.
+        // Das ganze sollte demnach einem Bild entsprechen, welches nur aus einem einzigen Segment besteht, welches die gesamte Fläche des Bildes einnimmt.
+        // Unten wird bei mir auch die fitness wie erwartet ausgegeben, jedoch hat das Bild viele Kleine Segmente, was nicht sein sollte.
+        population.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
+        println!("Best Individual Fitness: {:?}", population[0].get_fitness());
+        show(&population[0].get_segment_border_image_inline(global_data));
+        let _ = save_individuals_to_files(&vec![population[0].clone()], config, global_data);
     }
 }

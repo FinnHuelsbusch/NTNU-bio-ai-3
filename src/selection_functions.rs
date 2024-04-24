@@ -3,9 +3,7 @@ use std::cmp::Ordering;
 use rand::Rng;
 
 use crate::{
-    config::Config,
-    individual::Individual,
-    population::{ self, non_dominated_sort, Population },
+    config::Config, global_data, individual::{self, Individual}, population::{ self, non_dominated_sort, Population }
 };
 
 fn tournament_selection(
@@ -144,6 +142,85 @@ fn nsga_2_selection(population: &Population, population_size: usize) -> Populati
     nsga2_population
 }
 
+fn roulett_wheel_weighted(
+    population: &Population,
+    population_size: usize
+) -> Population {
+    // Create a new population
+    let mut new_population: Population = Vec::with_capacity(population_size);
+    // Calculate the sum of the fitness values
+    let mut minimum_fitness = f64::INFINITY;
+    let mut maximum_fitness = f64::NEG_INFINITY;
+    for individual in population.iter() {
+        let fitness = individual.get_fitness();
+        if fitness < minimum_fitness {
+            minimum_fitness = fitness;
+        }
+        if fitness > maximum_fitness {
+            maximum_fitness = fitness;
+        }
+    }
+    if minimum_fitness == maximum_fitness {
+        println!("All individuals have the same fitness value. -> Returning the population as is.");
+        return population.clone();
+    }
+    // Calculate the probability of each individual
+    let mut probabilities: Vec<f64> = Vec::with_capacity(population.len());
+    let mut probabilitiy_sum = 0.0;
+    for individual in population.iter() {
+        let fitness = individual.get_fitness();
+        let probability = (fitness - minimum_fitness) / (maximum_fitness - minimum_fitness);
+        probabilities.push(probability);
+        probabilitiy_sum += probability;
+    }
+    // Create the new population
+    let mut rng = rand::thread_rng();
+    for _ in 0..population_size {
+        let mut random_number = rng.gen_range(0.0..probabilitiy_sum);
+        let mut index = 0;
+        while random_number >= 0.0 {
+            random_number -= probabilities[index];
+            index += 1;
+        }
+        new_population.push(population[index - 1].clone());
+    }
+
+    new_population
+}
+
+fn tournament_weighted(
+    population: &Population,
+    population_size: usize,
+    tournament_size: usize,
+    tournament_probability: f64
+) -> Population {
+    let mut new_population: Population = Vec::with_capacity(population_size);
+    let mut rng = rand::thread_rng();
+
+    for _ in 0..population_size {
+        let mut tournament: Vec<Individual> = Vec::with_capacity(tournament_size);
+        for _ in 0..tournament_size {
+            let index = rng.gen_range(0..population.len());
+            tournament.push(population[index].clone());
+        }
+
+        tournament.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
+        let selected_individual = if rng.gen::<f64>() < tournament_probability {
+            &tournament[0]
+        } else {
+            // if there is only one individual in the tournament
+            let rank = rng.gen_range(1..tournament.len());
+            &tournament[rank]
+                
+            
+        };
+        new_population.push(selected_individual.clone());
+    }
+
+    new_population
+}
+
+
 pub fn parent_selection(
     population: &Population,
     sorted_population: &Vec<Vec<Individual>>,
@@ -167,6 +244,19 @@ pub fn parent_selection(
             }
             population.clone()
         }
+        "roulett_wheel_weighted" =>
+            roulett_wheel_weighted(
+                &population,
+                config.population_size - new_population.len(),
+            ),
+
+        "tournament_weighted" =>
+            tournament_weighted(
+                &population,
+                config.population_size - new_population.len(),
+                config.parent_selection.tournament_size.unwrap(),
+                config.parent_selection.probability.unwrap()
+            ),
         // Handle the rest of cases
         _ =>
             panic!(
@@ -232,6 +322,26 @@ pub fn survivor_selection(
             }
             nsga_2_selection(&new_population, config.population_size)
         }
+        "roulett_wheel_weighted" => {
+            roulett_wheel_weighted(&new_population, config.population_size)
+        }
+        "tournament_weighted" => {
+            tournament_weighted(
+                &new_population,
+                config.population_size,
+                config.survivor_selection.tournament_size.unwrap_or_else(||
+                    panic!(
+                        "You need to specify the tournament size if you are using tournament selection for survivor selection."
+                    )
+                ),
+                config.survivor_selection.probability.unwrap_or_else(||
+                    panic!(
+                        "You need to specify the tournament probability if you are using tournament selection for survivor selection."
+                    )
+                )
+            )
+        }
+        // Handle the rest of cases
         _ =>
             panic!(
                 "Didn't have an Implementation for selection function: {:?}",

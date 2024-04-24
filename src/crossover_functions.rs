@@ -107,9 +107,9 @@ pub fn crossover(
             };
 
             population[individual_index_a].genome = child_genomes.0;
-            population[individual_index_a].needs_update();
+            population[individual_index_a].set_needs_update();
             population[individual_index_b].genome = child_genomes.1;
-            population[individual_index_b].needs_update();
+            population[individual_index_b].set_needs_update();
             
         }
     }

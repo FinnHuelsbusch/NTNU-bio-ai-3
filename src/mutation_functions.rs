@@ -277,8 +277,8 @@ fn flip_to_smallest_deviation(child: &mut Individual, global_data: &GlobalData, 
 
             direction_deviation +=
                 global_data.euclidean_distance_map[row as usize][column as usize]
-                    [(pixel_y_offset as usize) + (radius as usize)]
-                    [(pixel_x_offset as usize) + (radius as usize)];
+                    [(pixel_y_offset  + 3) as usize]
+                    [(pixel_x_offset  + 3) as usize];
         }
 
         direction_deviation /= radius as f64;

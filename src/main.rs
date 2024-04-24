@@ -10,7 +10,7 @@ use crate::{
     genetic_algorithm::run_genetic_algorithm_instance,
     global_data::{ generate_pixel_edge_weights, GlobalData },
     individual::Individual,
-    utils::show,
+    utils::{ get_edge_weighted_random_pixel_index, show },
 };
 
 mod config;
@@ -56,7 +56,7 @@ fn main() {
 
     // add delta to each pixel so we dont loose mutations at spots which are not edges
     blurred.pixels_mut().for_each(|pixel| {
-        *pixel = Luma([pixel.0[0] + 1]);
+        *pixel = Luma([pixel.0[0] + 10]);
     });
 
     // Clip the values between 0 and 255
@@ -73,18 +73,6 @@ fn main() {
 
     let weights = generate_pixel_edge_weights(&blurred);
 
-    // let mut rgb_image_edge: RgbImage = ImageBuffer::new(edge_image.width(), edge_image.height());
-
-    // for row in 0..blurred.height() {
-    //     for column in 0..blurred.width() {
-    //         let pixel = blurred.get_pixel(column as u32, row as u32);
-    //         let copy_pixel = rgb_image_edge.get_pixel_mut(column as u32, row as u32);
-    //         *copy_pixel = image::Rgb([pixel.0[0], pixel.0[0], pixel.0[0]]);
-    //     }
-    // }
-
-    // show(&rgb_image_edge);
-
     let global_data = GlobalData {
         rgb_image: &rgb_image,
         euclidean_distance_map: &calculate_euclidean_distance_map_for_neighbors(&rgb_image),
@@ -93,5 +81,28 @@ fn main() {
         height: rgb_image.height() as usize,
         pixel_weights: &weights,
     };
+
+    // let mut test: GrayImage = ImageBuffer::new(edge_image.width(), edge_image.height());
+
+    // for _ in 0..100000 {
+    //     let index = get_edge_weighted_random_pixel_index(&global_data);
+    //     let column = (index % global_data.width) as i32;
+    //     let row = (index / global_data.width) as i32;
+    //     let pixel = test.get_pixel_mut(column as u32, row as u32);
+
+    //     *pixel = image::Luma([pixel.0[0] + 10]);
+    // }
+
+    // let mut rgb_image_edge: RgbImage = ImageBuffer::new(edge_image.width(), edge_image.height());
+    // for row in 0..test.height() {
+    //     for column in 0..test.width() {
+    //         let pixel = test.get_pixel(column as u32, row as u32);
+    //         let copy_pixel = rgb_image_edge.get_pixel_mut(column as u32, row as u32);
+    //         *copy_pixel = image::Rgb([pixel.0[0], pixel.0[0], pixel.0[0]]);
+    //     }
+    // }
+
+    // show(&rgb_image_edge);
+
     run_genetic_algorithm_instance(&config, &global_data);
 }

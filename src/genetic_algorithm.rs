@@ -155,11 +155,12 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         println!("SURV_SEL");
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, config);
-        print!("Number of None in genes of children: ");
+
+        show(&population[0].get_segments_image(global_data));
     }
     let pareto_fronts = non_dominated_sort(&population);
     let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
     for individual in pareto_fronts[0].iter() {
-        show(&individual.get_segment_border_image_inline(global_data));
+        show(&individual.get_segments_image(global_data));
     }
 }

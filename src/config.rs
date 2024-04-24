@@ -23,6 +23,7 @@ pub struct FunctionConfig {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
+    pub export_pareto_front: bool,
     pub problem_instance: String,
     pub population_size: usize,
     pub number_of_generations: usize,

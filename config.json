@@ -1,9 +1,10 @@
 {
-  "problem_instance": "86016",
-  "population_size": 50,
+  "export_pareto_front": false, 
+  "problem_instance": "353013",
+  "population_size": 100,
   "number_of_generations": 50,
   "edge_value_multiplier": 1.0,
-  "connectivity_multiplier": 100.0,
+  "connectivity_multiplier": 50000.0,
   "overall_deviation_multiplier": 1.0,
   "canny_hysteresis_high": 40.0,
   "canny_hysteresis_low": 28.0,
@@ -50,7 +51,7 @@
     }
   ],
   "survivor_selection": {
-    "name": "NSGA-2",
+    "name": "roulett_wheel_weighted",
     "combine_parents_and_offspring": true,
     "tournament_size": 4,
     "probability": 0.75

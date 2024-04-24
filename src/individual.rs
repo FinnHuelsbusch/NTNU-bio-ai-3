@@ -263,12 +263,13 @@ pub struct Individual {
     pub genome: Genome,
     needs_update: bool,
 
-    pub fitness: f64,
+    
 
     // penalty
     edge_value_fitness: f64,
     connectivity_fitness: f64,
     overall_deviation_fitness: f64,
+    fitness: f64,
 }
 
 impl Individual {
@@ -278,7 +279,7 @@ impl Individual {
         Individual {
             genome,
             needs_update: true,
-            fitness: 0.0,
+            fitness: 0.0, // higher is better
             edge_value_fitness: 0.0,
             connectivity_fitness: 0.0,
             overall_deviation_fitness: 0.0,
@@ -528,6 +529,13 @@ impl Individual {
             panic!("Objectives need to be updated before getting them");
         }
         (self.edge_value_fitness, self.connectivity_fitness, self.overall_deviation_fitness)
+    }
+
+    pub fn get_fitness(&self) -> f64 {
+        if self.needs_update {
+            panic!("Fitness needs to be updated before getting it");
+        }
+        self.fitness
     }
 
     /**

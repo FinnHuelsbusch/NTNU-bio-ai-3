@@ -19,15 +19,15 @@ pub fn calculate_euclidean_distance_map_for_neighbors(
     let width = rgb_image.width();
     let mut euclidean_distance_map: EuclideanDistanceMap =
         vec![
-        vec![
             vec![
-                vec![0.0; 7];
-                7
+                vec![
+                    vec![0.0; 7];
+                    7
+                ];
+                width as usize
             ];
-            width as usize
+            height as usize
         ];
-        height as usize
-    ];
 
     for row in 0..height as usize {
         for column in 0..width as usize {

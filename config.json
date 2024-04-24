@@ -1,9 +1,9 @@
 {
   "problem_instance": "86016",
-  "population_size": 100,
-  "number_of_generations": 500,
+  "population_size": 50,
+  "number_of_generations": 50,
   "edge_value_multiplier": 1.0,
-  "connectivity_multiplier": 1.0,
+  "connectivity_multiplier": 100.0,
   "overall_deviation_multiplier": 1.0,
   "canny_hysteresis_high": 40.0,
   "canny_hysteresis_low": 28.0,
@@ -11,7 +11,7 @@
   "initialization_method": "mst",
   "preserve_skyline": false,
   "parent_selection": {
-    "name": "tournament",
+    "name": "none",
     "tournament_size": 4,
     "probability": 0.7
   },
@@ -33,15 +33,15 @@
   "mutations": [
     {
       "name": "flip_one_bit",
-      "probability": 0.05
+      "probability": 0.0
     },
     {
       "name": "flip_to_smallest_segment",
-      "probability": 0.05
+      "probability": 0.01
     },
     {
       "name": "flip_to_biggest_segment",
-      "probability": 0.05
+      "probability": 0.1
     },
     {
       "name": "flip_to_smallest_deviation",

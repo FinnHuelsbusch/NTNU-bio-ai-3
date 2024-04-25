@@ -2,7 +2,7 @@
   "export_pareto_front": true,
   "problem_instance": "176035",
   "population_size": 20,
-  "number_of_generations": 30,
+  "number_of_generations": 50,
   "edge_value_multiplier": 1.5,
   "connectivity_multiplier": 275.0,
   "overall_deviation_multiplier": 0.8,
@@ -21,23 +21,23 @@
   "crossovers": [
     {
       "name": "one_point",
-      "probability": 0.0
+      "probability": 0.1
     },
     {
       "name": "n_point",
-      "probability": 0.0,
+      "probability": 0.1,
       "number_of_slices": 3
     },
     {
       "name": "uniform",
-      "probability": 0.0
+      "probability": 0.1
     }
   ],
   "mutations": [
     {
       "name": "eat_similar",
-      "probability": 0.2,
-      "max_depth_percent_of_picture": 0.8
+      "probability": 0.3,
+      "max_depth_percent_of_picture": 0.9
     },
     {
       "name": "flip_one_bit",
@@ -60,8 +60,8 @@
 
     {
       "name": "destroy_small_segments",
-      "probability": 0.0,
-      "minimum_coverage_percentage": 0.05
+      "probability": 0.2,
+      "minimum_coverage_percentage": 0.07
     }
   ],
   "survivor_selection": {

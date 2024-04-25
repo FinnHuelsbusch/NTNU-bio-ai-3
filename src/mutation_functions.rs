@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use image::{ GenericImageView, Rgb, RgbImage };
 use imageproc::drawing::Canvas;
@@ -167,6 +167,124 @@ fn connect_similar_pixels_recursive(
     }
 }
 
+pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalData, minimum_coverage_percentage: f64) {
+    let segment_map = individual.get_cluster_map(
+        global_data.width as i64,
+        global_data.height as i64
+    );
+
+    let mut segmentation_size_map: HashMap<usize, (u32, usize, usize)> = HashMap::new();
+
+    for row in 0..global_data.height {
+        for column in 0..global_data.width {
+            segmentation_size_map
+                .entry(segment_map[row][column])
+                .and_modify(|segment_size| {
+                    segment_size.0 += 1;
+                })
+                .or_insert((1, row, column));
+        }
+    }
+
+    for (key, value) in segmentation_size_map.iter() {
+        let count = value.0;
+        let mut row = value.1;
+        let mut column = value.2;
+        let percentage_covered_by_cluster = count as f64 / ((global_data.width * global_data.height) as f64) ;
+        if percentage_covered_by_cluster < minimum_coverage_percentage {
+            let mut seen_pixels: HashSet<(usize, usize)> = HashSet::new();
+            let mut current_segment = segment_map[row as usize][column as usize];
+            let mut current_direction = Connection::None;
+            while current_segment == *key &&  
+                current_direction != Connection::None &&
+                !seen_pixels.contains(&(row, column))
+                {
+                    // check if current pixel is pointing outside of the picture
+                    if
+                        (row == 0 && current_direction == Connection::Up) ||
+                        (row == (global_data.height as usize) - 1 && current_direction == Connection::Down) ||
+                        (column == 0 && current_direction == Connection::Left) ||
+                        (column == (global_data.width as usize) - 1 && current_direction == Connection::Right)
+                    {
+                        // the pixel is pointing outside of the picture -> it is the root of the segment
+                        // check if segment can be combined with oghter segment
+                        // this is not the case in the following case:
+                        //  ---------
+                        // |None|Left|
+                        // |Up  |    |
+                        // No matter how non is flipped, it will not unify the segment with any other segment
+
+                        break;
+
+                    } else{
+                        // the current pixel is pointing to another pixel
+                        // get the new pixel
+                        let new_row = row as i32 + match current_direction {
+                            Connection::Up => -1,
+                            Connection::Down => 1,
+                            _ => 0,
+                        };
+                        let new_column = column as i32 + match current_direction {
+                            Connection::Left => -1,
+                            Connection::Right => 1,
+                            _ => 0,
+                        };
+
+                        let new_pixel_segment = segment_map[new_row as usize][new_column as usize];
+                        if new_pixel_segment == current_segment {
+                            // the new pixel is part of the same segment
+                            // set the new pixel as seen
+                            seen_pixels.insert((row, column));
+                            // set the new pixel as the current pixel
+                            row = new_row as usize;
+                            column = new_column as usize;
+                        } else {
+                           panic!("This should not happen");
+                            
+                        }
+                    }
+                }
+
+            // check all four directions if they are a valid pixel and if they belong to a different segment
+            let mut valid_directions = vec![];
+            for position in [
+                (-1, 0, Connection::Up),
+                (0, -1, Connection::Left),
+                (0, 1, Connection::Right),
+                (1, 0, Connection::Down),
+            ] {
+                let y_offset = position.0;
+                let x_offset = position.1;
+                let new_row = row as i32 + y_offset;
+                let new_column = column as i32 + x_offset;
+                if
+                    new_row >= 0 &&
+                    new_row < global_data.height as i32 &&
+                    new_column >= 0 &&
+                    new_column < global_data.width as i32 &&
+                    segment_map[new_row as usize][new_column as usize] != current_segment
+                {
+                    valid_directions.push(position.2);
+                }
+            }
+
+            if valid_directions.len() > 0 {
+                // flip to a random direction
+                let random_index = thread_rng().gen_range(0..valid_directions.len());
+                individual.genome[row * global_data.width + column] = valid_directions[random_index];
+            } 
+            
+                
+            
+        }
+    }
+
+    
+}
+
+
+
+
 // pick a random pixel. and it all similar ones recursive without depth limit
 pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data: &GlobalData) {
     let random_index = thread_rng().gen_range(0..child.genome.len());
@@ -324,6 +442,13 @@ pub fn mutate(population: &mut Population, config: &Config, global_data: &Global
                         child,
                         global_data,
                         mutation_config.radius.unwrap_or(1)
+                    );
+                }
+                "destroy_small_segments" => {
+                    destroy_small_segments(
+                        child,
+                        global_data,
+                        mutation_config.minimum_coverage_percentage.unwrap()
                     );
                 }
                 _ =>

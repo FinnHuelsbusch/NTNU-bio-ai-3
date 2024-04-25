@@ -11,8 +11,10 @@
   "blur_sigma": 3,
   "initialization_method": "mst",
   "preserve_skyline": false,
+  "show_images": false,
+  "number_of_threads": 12,
   "parent_selection": {
-    "name": "tournament",
+    "name": "none",
     "tournament_size": 4,
     "probability": 0.7
   },

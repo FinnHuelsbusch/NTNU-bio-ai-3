@@ -7,7 +7,7 @@ use rand::{ thread_rng, Rng };
 
 use crate::{
     config::{ self, Config },
-    distance::euclidean_distance,
+    distance::{ self, euclidean_distance },
     global_data::{ self, GlobalData },
     individual::{ Connection, Genome, Individual },
     population::Population,
@@ -169,7 +169,6 @@ fn connect_similar_pixels(
             }
 
             let current_pixel = global_data.rgb_image.get_pixel(column_new as u32, row_new as u32);
-
             if
                 is_pixel_within_variance(
                     &(
@@ -255,8 +254,8 @@ pub fn destroy_small_segments(
                 .or_insert((1, row, column));
         }
     }
-    println!("Debugging startet");
-    println!("Number of segments: {}", segmentation_size_map.len());
+    // println!("Debugging startet");
+    // println!("Number of segments: {}", segmentation_size_map.len());
 
     for (key, value) in segmentation_size_map.iter() {
         let count = value.0;
@@ -289,7 +288,7 @@ pub fn destroy_small_segments(
                     // |None|Left|
                     // |Up  |    |
                     // No matter how non is flipped, it will not unify the segment with any other segment
-                    println!("Pixel is pointing outside of the picture");
+                    // println!("Pixel is pointing outside of the picture");
                     break;
                 } else {
                     // the current pixel is pointing to another pixel
@@ -350,7 +349,7 @@ pub fn destroy_small_segments(
                     })) as usize;
 
                 if row >= global_data.height || column >= global_data.width {
-                    println!("Reached end of picture");
+                    // println!("Reached end of picture");
                     break;
                 }
             }
@@ -437,22 +436,24 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
     variance_pixel_color.1 /= number_of_pixels_in_segment as f64;
     variance_pixel_color.2 /= number_of_pixels_in_segment as f64;
 
-    // let mut mean = (mean_pixel_color.0, mean_pixel_color.1, mean_pixel_color.2);
-    let mean = (pixel.0[0] as f64, pixel.0[1] as f64, pixel.0[2] as f64);
+    // let mean = (pixel.0[0] as f64, pixel.0[1] as f64, pixel.0[2] as f64);
+    let variance_random = thread_rng().gen_range(20.0..130.0);
     let variance = (
-        variance_pixel_color.0.clamp(1.0, 80.0),
-        variance_pixel_color.1.clamp(1.0, 80.0),
-        variance_pixel_color.2.clamp(1.0, 80.0),
+        variance_pixel_color.0.clamp(1.0, variance_random),
+        variance_pixel_color.1.clamp(1.0, variance_random),
+        variance_pixel_color.2.clamp(1.0, variance_random),
     );
 
-    // initial pixel has a too high varianze to the mean, so the segment is probably to big and faulty
-    // if
-    //     (mean.0 - (pixel.0[0] as f64)).abs() >= 30.0 &&
-    //     (mean.1 - (pixel.0[1] as f64)).abs() >= 30.0 &&
-    //     (mean.2 - (pixel.0[2] as f64)).abs() >= 30.0
-    // {
-    //     mean = (pixel.0[0] as f64, pixel.0[1] as f64, pixel.0[2] as f64);
-    // }
+    let mut mean = (mean_pixel_color.0, mean_pixel_color.1, mean_pixel_color.2);
+
+    //initial pixel has a too high varianze to the mean, so the segment is probably to big and faulty
+    if
+        (mean.0 - (pixel.0[0] as f64)).abs() >= 30.0 &&
+        (mean.1 - (pixel.0[1] as f64)).abs() >= 30.0 &&
+        (mean.2 - (pixel.0[2] as f64)).abs() >= 30.0
+    {
+        mean = (pixel.0[0] as f64, pixel.0[1] as f64, pixel.0[2] as f64);
+    }
 
     // println!("Mean: {:?}", mean);
     // println!("Variance: {:?}", variance);

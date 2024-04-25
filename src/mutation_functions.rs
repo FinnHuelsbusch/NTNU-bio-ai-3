@@ -359,7 +359,7 @@ pub fn destroy_small_segments(
 
 // pick a random pixel. and it all similar ones recursive without depth limit
 pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data: &GlobalData) {
-    let random_index = thread_rng().gen_range(0..child.genome.len());
+    let random_index = get_edge_weighted_random_pixel_index(global_data);
 
     // let random_index = 34000;
 
@@ -437,7 +437,7 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
     variance_pixel_color.2 /= number_of_pixels_in_segment as f64;
 
     // let mean = (pixel.0[0] as f64, pixel.0[1] as f64, pixel.0[2] as f64);
-    let variance_random = thread_rng().gen_range(40.0..100.0);
+    let variance_random = thread_rng().gen_range(35.0..80.0);
     let variance = (
         variance_pixel_color.0.clamp(1.0, variance_random),
         variance_pixel_color.1.clamp(1.0, variance_random),

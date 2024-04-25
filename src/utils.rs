@@ -2,11 +2,40 @@ use image::RgbImage;
 use rand::{ thread_rng, Rng };
 use show_image::{ create_window, event };
 
-use crate::global_data::{ self, GlobalData };
+use crate::{ global_data::{ self, GlobalData }, individual::{ self, Individual } };
 
 pub fn show(image: &RgbImage) {
     // Create a window and display the image.
     let window = create_window("Debug", Default::default()).unwrap();
+    window.set_image("image-001", image.clone()).unwrap();
+
+    // Print keyboard events until Escape is pressed, then exit.
+    // If the user closes the window, the channel is closed and the loop also exits.
+    for event in window.event_channel().unwrap() {
+        if let event::WindowEvent::KeyboardInput(event) = event {
+            println!("{:#?}", event);
+            if
+                event.input.key_code == Some(event::VirtualKeyCode::Escape) &&
+                event.input.state.is_pressed()
+            {
+                break;
+            }
+        }
+    }
+}
+
+pub fn show_with_data(image: &RgbImage, individual: &Individual) {
+    // Create a window and display the image.
+    let multi_fitness = individual.get_objectives();
+    let fitness = individual.get_fitness();
+    let title = format!(
+        "Edge Value Fitness: {} Connectivity Fitness: {} Overall Deviation Fitness: {} Weighted Fitness: {}",
+        multi_fitness.0,
+        multi_fitness.1,
+        multi_fitness.2,
+        fitness
+    );
+    let window = create_window(title, Default::default()).unwrap();
     window.set_image("image-001", image.clone()).unwrap();
 
     // Print keyboard events until Escape is pressed, then exit.

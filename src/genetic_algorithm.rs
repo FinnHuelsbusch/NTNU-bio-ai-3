@@ -7,7 +7,7 @@ use crate::crossover_functions::crossover;
 use crate::distance::euclidean_distance;
 use crate::global_data::GlobalData;
 use crate::individual::{ Individual };
-use crate::utils::show;
+use crate::utils::{ show, show_with_data };
 
 use crate::mutation_functions::{ eat_similar, mutate };
 use crate::selection_functions::{ parent_selection, survivor_selection };
@@ -176,7 +176,10 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
         if config.show_images {
             for individual in pareto_fronts[0].iter() {
-                show(&individual.get_segment_border_image_inline(global_data));
+                show_with_data(
+                    &individual.get_segment_border_image_inline(global_data),
+                    individual
+                );
             }
         }
     } else {
@@ -187,9 +190,11 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         population.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
         println!("Best Individual Fitness: {:?}", population[0].get_fitness());
         let _ = save_individuals_to_files(&vec![population[0].clone()], config, global_data);
-        if config.show_images{
-            show(&population[0].get_segment_border_image_inline(global_data));
+        if config.show_images {
+            show_with_data(
+                &population[0].get_segment_border_image_inline(global_data),
+                &population[0]
+            );
         }
-        
     }
 }

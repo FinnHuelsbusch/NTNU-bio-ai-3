@@ -177,7 +177,7 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         // Unten wird bei mir auch die fitness wie erwartet ausgegeben, jedoch hat das Bild viele Kleine Segmente, was nicht sein sollte.
         population.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
         println!("Best Individual Fitness: {:?}", population[0].get_fitness());
-        show(&population[0].get_segment_border_image_inline(global_data));
         let _ = save_individuals_to_files(&vec![population[0].clone()], config, global_data);
+        show(&population[0].get_segment_border_image_inline(global_data));
     }
 }

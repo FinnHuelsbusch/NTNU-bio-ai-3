@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, os::unix::thread};
 
 use image::{ GenericImageView, Rgb, RgbImage };
 use imageproc::drawing::Canvas;
@@ -204,6 +204,9 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
                 .or_insert((1, row, column));
         }
     }
+    println!("Debugging startet");
+    println!("Number of segments: {}", segmentation_size_map.len());
+
 
     for (key, value) in segmentation_size_map.iter() {
         let count = value.0;
@@ -213,7 +216,7 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
         if percentage_covered_by_cluster < minimum_coverage_percentage {
             let mut seen_pixels: HashSet<(usize, usize)> = HashSet::new();
             let mut current_segment = segment_map[row as usize][column as usize];
-            let mut current_direction = Connection::None;
+            let mut current_direction = individual.genome[row * global_data.width + column];
             while current_segment == *key &&  
                 current_direction != Connection::None &&
                 !seen_pixels.contains(&(row, column))
@@ -232,8 +235,9 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
                         // |None|Left|
                         // |Up  |    |
                         // No matter how non is flipped, it will not unify the segment with any other segment
-
+                        println!("Pixel is pointing outside of the picture");
                         break;
+
 
                     } else{
                         // the current pixel is pointing to another pixel
@@ -257,6 +261,8 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
                             // set the new pixel as the current pixel
                             row = new_row as usize;
                             column = new_column as usize;
+                            current_segment = new_pixel_segment;
+                            current_direction = individual.genome[row * global_data.width + column];
                         } else {
                            panic!("This should not happen");
                             
@@ -264,35 +270,33 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
                     }
                 }
 
-            // check all four directions if they are a valid pixel and if they belong to a different segment
-            let mut valid_directions = vec![];
-            for position in [
-                (-1, 0, Connection::Up),
-                (0, -1, Connection::Left),
-                (0, 1, Connection::Right),
-                (1, 0, Connection::Down),
-            ] {
-                let y_offset = position.0;
-                let x_offset = position.1;
-                let new_row = row as i32 + y_offset;
-                let new_column = column as i32 + x_offset;
-                if
-                    new_row >= 0 &&
-                    new_row < global_data.height as i32 &&
-                    new_column >= 0 &&
-                    new_column < global_data.width as i32 &&
-                    segment_map[new_row as usize][new_column as usize] != current_segment
-                {
-                    valid_directions.push(position.2);
-                }
-            }
+                let mut thread_rng = rand::thread_rng();
+                let new_direction = match thread_rng.gen_range(1..5) {
+                    1 => Connection::Up,
+                    2 => Connection::Down,
+                    3 => Connection::Left,
+                    4 => Connection::Right,
+                    _ => panic!("Invalid connection value"),
+                };
+                // walk in chosen direction until the end of the segment is reached or the picture is left
+                while (segment_map[row][column] == *key){
+                    individual.genome[row * global_data.width + column] = new_direction;
+                    row = (row as i32 + match new_direction {
+                        Connection::Up => -1,
+                        Connection::Down => 1,
+                        _ => 0,
+                    }) as usize;
+                    column = (column as i32 + match new_direction {
+                        Connection::Left => -1,
+                        Connection::Right => 1,
+                        _ => 0,
+                    }) as usize;
 
-            if valid_directions.len() > 0 {
-                // flip to a random direction
-                let random_index = thread_rng().gen_range(0..valid_directions.len());
-                individual.genome[row * global_data.width + column] = valid_directions[random_index];
-            } 
-            
+                    if row >= global_data.height ||column >= global_data.width {
+                        println!("Reached end of picture");
+                        break;
+                    }
+                }
                 
             
         }

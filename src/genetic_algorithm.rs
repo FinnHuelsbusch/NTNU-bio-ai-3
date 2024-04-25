@@ -178,7 +178,8 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
             for individual in pareto_fronts[0].iter() {
                 show_with_data(
                     &individual.get_segment_border_image_inline(global_data),
-                    individual
+                    individual,
+                    global_data
                 );
             }
         }
@@ -193,7 +194,8 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         if config.show_images {
             show_with_data(
                 &population[0].get_segment_border_image_inline(global_data),
-                &population[0]
+                &population[0],
+                global_data
             );
         }
     }

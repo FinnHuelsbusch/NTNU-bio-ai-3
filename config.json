@@ -1,6 +1,6 @@
 {
-  "export_pareto_front": false,
-  "problem_instance": "176039",
+  "export_pareto_front": true,
+  "problem_instance": "147091",
   "population_size": 30,
   "number_of_generations": 50,
   "edge_value_multiplier": 1.5,
@@ -14,7 +14,7 @@
   "show_images": true,
   "number_of_threads": 1,
   "parent_selection": {
-    "name": "tournament_weighted",
+    "name": "tournament",
     "tournament_size": 4,
     "probability": 0.7
   },
@@ -36,8 +36,8 @@
   "mutations": [
     {
       "name": "eat_similar",
-      "probability": 0.08,
-      "max_depth_percent_of_picture": 0.7
+      "probability": 0.1,
+      "max_depth_percent_of_picture": 0.8
     },
     {
       "name": "flip_one_bit",
@@ -65,7 +65,7 @@
     }
   ],
   "survivor_selection": {
-    "name": "roulett_wheel_weighted",
+    "name": "NSGA-2",
     "combine_parents_and_offspring": true,
     "tournament_size": 4,
     "probability": 0.75

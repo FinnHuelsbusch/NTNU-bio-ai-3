@@ -4,6 +4,27 @@ use show_image::{ create_window, event };
 
 use crate::{ global_data::{ self, GlobalData }, individual::{ self, Individual } };
 
+fn combine_images(img1: &RgbImage, img2: &RgbImage) -> RgbImage {
+    let (width1, height) = img1.dimensions();
+    let (width2, _) = img2.dimensions();
+    let combined_width = width1 + width2;
+
+    let mut combined_image = RgbImage::new(combined_width, height);
+
+    // Copy pixels from the first image
+    for (x, y, pixel) in img1.enumerate_pixels() {
+        combined_image.put_pixel(x, y, *pixel);
+    }
+
+    // Copy pixels from the second image, starting from the end of the first
+    for (x, y, pixel) in img2.enumerate_pixels() {
+        let combined_x = x + width1;
+        combined_image.put_pixel(combined_x, y, *pixel);
+    }
+
+    combined_image
+}
+
 pub fn show(image: &RgbImage) {
     // Create a window and display the image.
     let window = create_window("Debug", Default::default()).unwrap();
@@ -24,7 +45,7 @@ pub fn show(image: &RgbImage) {
     }
 }
 
-pub fn show_with_data(image: &RgbImage, individual: &Individual) {
+pub fn show_with_data(image: &RgbImage, individual: &Individual, global_data: &GlobalData) {
     // Create a window and display the image.
     let multi_fitness = individual.get_objectives();
     let fitness = individual.get_fitness();
@@ -35,8 +56,9 @@ pub fn show_with_data(image: &RgbImage, individual: &Individual) {
         multi_fitness.2,
         fitness
     );
+    let black_white_image = individual.get_segment_border_image(global_data);
     let window = create_window(title, Default::default()).unwrap();
-    window.set_image("image-001", image.clone()).unwrap();
+    window.set_image("image-001", combine_images(&image.clone(), &black_white_image)).unwrap();
 
     // Print keyboard events until Escape is pressed, then exit.
     // If the user closes the window, the channel is closed and the loop also exits.

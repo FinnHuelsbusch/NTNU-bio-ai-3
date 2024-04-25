@@ -3,7 +3,10 @@ use std::cmp::Ordering;
 use rand::Rng;
 
 use crate::{
-    config::Config, global_data, individual::{self, Individual}, population::{ self, non_dominated_sort, Population }
+    config::Config,
+    global_data,
+    individual::{ self, Individual },
+    population::{ self, non_dominated_sort, Population },
 };
 
 fn tournament_selection(
@@ -142,10 +145,7 @@ fn nsga_2_selection(population: &Population, population_size: usize) -> Populati
     nsga2_population
 }
 
-fn roulett_wheel_weighted(
-    population: &Population,
-    population_size: usize
-) -> Population {
+fn roulette_wheel_weighted(population: &Population, population_size: usize) -> Population {
     // Create a new population
     let mut new_population: Population = Vec::with_capacity(population_size);
     // Calculate the sum of the fitness values
@@ -211,15 +211,12 @@ fn tournament_weighted(
             // if there is only one individual in the tournament
             let rank = rng.gen_range(1..tournament.len());
             &tournament[rank]
-                
-            
         };
         new_population.push(selected_individual.clone());
     }
 
     new_population
 }
-
 
 pub fn parent_selection(
     population: &Population,
@@ -244,11 +241,8 @@ pub fn parent_selection(
             }
             population.clone()
         }
-        "roulett_wheel_weighted" =>
-            roulett_wheel_weighted(
-                &population,
-                config.population_size - new_population.len(),
-            ),
+        "roulette_wheel_weighted" =>
+            roulette_wheel_weighted(&population, config.population_size - new_population.len()),
 
         "tournament_weighted" =>
             tournament_weighted(
@@ -322,8 +316,8 @@ pub fn survivor_selection(
             }
             nsga_2_selection(&new_population, config.population_size)
         }
-        "roulett_wheel_weighted" => {
-            roulett_wheel_weighted(&new_population, config.population_size)
+        "roulette_wheel_weighted" => {
+            roulette_wheel_weighted(&new_population, config.population_size)
         }
         "tournament_weighted" => {
             tournament_weighted(

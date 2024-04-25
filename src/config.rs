@@ -22,6 +22,9 @@ pub struct FunctionConfig {
 
     #[serde(default)]
     pub max_depth_percent_of_picture: Option<f64>,
+
+    #[serde(default)]
+    pub minimum_coverage_percentage: Option<f64>
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

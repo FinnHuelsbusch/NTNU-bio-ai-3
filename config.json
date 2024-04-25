@@ -1,8 +1,8 @@
 {
   "export_pareto_front": true,
-  "problem_instance": "86016",
+  "problem_instance": "118035",
   "population_size": 50,
-  "number_of_generations": 200,
+  "number_of_generations": 100,
   "edge_value_multiplier": 1.0,
   "connectivity_multiplier": 250.0,
   "overall_deviation_multiplier": 1.0,
@@ -12,7 +12,7 @@
   "initialization_method": "mst",
   "preserve_skyline": false,
   "parent_selection": {
-    "name": "tournament",
+    "name": "none",
     "tournament_size": 4,
     "probability": 0.7
   },
@@ -53,6 +53,11 @@
       "name": "flip_to_smallest_deviation",
       "probability": 0.05,
       "radius": 3
+    },
+    {
+      "name": "destroy_small_segments",
+      "probability": 0.1,
+      "minimum_coverage_percentage": 0.05
     }
   ],
   "survivor_selection": {

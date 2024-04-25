@@ -161,7 +161,7 @@ fn get_connected_pixels_for_pixel(
         Connection::None => {}
         Connection::Up => {
             // if the direction is up the index needs to be at least in the second row. So width should be at least one time in the index
-            if index - width > 0 {
+            if index - width >= 0 {
                 connected_pixels.append(
                     &mut get_connected_pixels_for_pixel(
                         genome,

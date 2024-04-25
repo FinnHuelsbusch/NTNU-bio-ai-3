@@ -1,7 +1,9 @@
 use std::{collections::{HashMap, HashSet}, os::unix::thread};
 
+
 use image::{ GenericImageView, Rgb, RgbImage };
 use imageproc::drawing::Canvas;
+use queues::{ queue, IsQueue, Queue };
 use rand::{ thread_rng, Rng };
 
 use crate::{
@@ -111,8 +113,8 @@ fn is_pixel_within_variance(
         threshold * variance.0 + threshold * variance.1 + threshold * variance.2
 }
 
-fn connect_similar_pixels_recursive(
-    index: usize,
+fn connect_similar_pixels(
+    start_index: usize,
     child: &mut Individual,
     seen_pixels: &mut Vec<usize>,
     mean: &(f64, f64, f64),
@@ -120,68 +122,63 @@ fn connect_similar_pixels_recursive(
     global_data: &GlobalData,
     max_depth: usize
 ) {
-    if max_depth == seen_pixels.len() {
-        return;
-    }
+    let mut pixel_queue: Queue<usize> = queue![start_index];
 
-    seen_pixels.push(index);
+    while max_depth != seen_pixels.len() && pixel_queue.size() > 0 {
+        let current_pixel_index = pixel_queue.remove().unwrap();
+        seen_pixels.push(current_pixel_index);
 
-    let column = (index % global_data.width) as i32;
-    let row = (index / global_data.width) as i32;
+        let column = (current_pixel_index % global_data.width) as i32;
+        let row = (current_pixel_index / global_data.width) as i32;
 
-    // Go trough every neighbor
-    for position in [
-        (-1 as i32, 0 as i32, Connection::Down, (255 as u8, 0 as u8, 0 as u8)),
-        (0, -1, Connection::Right, (0 as u8, 255 as u8, 0 as u8)),
-        (0, 1, Connection::Left, (0 as u8, 0 as u8, 255 as u8)),
-        (1, 0, Connection::Up, (255 as u8, 0 as u8, 255 as u8)),
-    ] {
-        // ignore edges outside of the picture
-        if
-            (row == 0 && position.0 == -1) ||
-            (row == (global_data.height as i32) - 1 && position.0 == 1) ||
-            (column == 0 && position.1 == -1) ||
-            (column == (global_data.width as i32) - 1 && position.1 == 1)
-        {
-            continue;
-        }
+        // Go trough every neighbor
+        for position in [
+            (-1 as i32, 0 as i32, Connection::Down, (255 as u8, 0 as u8, 0 as u8)),
+            (0, -1, Connection::Right, (0 as u8, 255 as u8, 0 as u8)),
+            (0, 1, Connection::Left, (0 as u8, 0 as u8, 255 as u8)),
+            (1, 0, Connection::Up, (255 as u8, 0 as u8, 255 as u8)),
+        ] {
+            // ignore edges outside of the picture
+            if
+                (row == 0 && position.0 == -1) ||
+                (row == (global_data.height as i32) - 1 && position.0 == 1) ||
+                (column == 0 && position.1 == -1) ||
+                (column == (global_data.width as i32) - 1 && position.1 == 1)
+            {
+                continue;
+            }
 
-        // calculate the index in the genome based on the position
-        let y_offset = position.0;
-        let x_offset = position.1;
+            // calculate the index in the genome based on the position
+            let y_offset = position.0;
+            let x_offset = position.1;
 
-        let new_index = ((row + y_offset) * (global_data.width as i32) +
-            (column + x_offset)) as usize;
+            let new_index = ((row + y_offset) * (global_data.width as i32) +
+                (column + x_offset)) as usize;
 
-        let column_new = (index % global_data.width) as i32;
-        let row_new = (index / global_data.width) as i32;
+            let column_new = (new_index % global_data.width) as i32;
+            let row_new = (new_index / global_data.width) as i32;
 
-        if seen_pixels.contains(&new_index) {
-            continue;
-        }
+            if seen_pixels.contains(&new_index) {
+                continue;
+            }
 
-        let current_pixel = global_data.rgb_image.get_pixel(column_new as u32, row_new as u32);
+            let current_pixel = global_data.rgb_image.get_pixel(column_new as u32, row_new as u32);
 
-        if
-            is_pixel_within_variance(
-                &(current_pixel.0[0] as f64, current_pixel.0[1] as f64, current_pixel.0[2] as f64),
-                mean,
-                variance
-            )
-        {
-            // if the pixel is similar. Redirect it to the current pixel
-            child.genome[new_index] = position.2;
-
-            // and go recursive inside it
-            connect_similar_pixels_recursive(
-                new_index,
-                child,
-                seen_pixels,
-                mean,
-                variance,
-                global_data,
-                max_depth
-            );
+            if
+                is_pixel_within_variance(
+                    &(
+                        current_pixel.0[0] as f64,
+                        current_pixel.0[1] as f64,
+                        current_pixel.0[2] as f64,
+                    ),
+                    mean,
+                    variance
+                )
+            {
+                // if the pixel is similar. Redirect it to the current pixel
+                child.genome[new_index] = position.2;
+                pixel_queue.add(new_index).unwrap();
+            }
         }
     }
 }
@@ -306,8 +303,6 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
 }
 
 
-
-
 // pick a random pixel. and it all similar ones recursive without depth limit
 pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data: &GlobalData) {
     let random_index = thread_rng().gen_range(0..child.genome.len());
@@ -373,7 +368,7 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
     mean_pixel_color.1 /= number_of_pixels_in_segment as f64;
     mean_pixel_color.2 /= number_of_pixels_in_segment as f64;
 
-    connect_similar_pixels_recursive(
+    connect_similar_pixels(
         random_index,
         child,
         &mut vec![],
@@ -384,7 +379,7 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
             variance_pixel_color.2 as f64,
         ),
         global_data,
-        max_depth
+        1
     );
 
     // show(&test)

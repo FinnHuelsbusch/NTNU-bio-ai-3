@@ -4,7 +4,7 @@ use imageproc::edges::canny;
 use rand::Rng;
 
 use crate::{
-    config::{ self, Config },
+    config::Config,
     distance::{ get_nearest_neighbor_value, EuclideanDistanceMap },
     global_data::GlobalData,
 };
@@ -225,21 +225,13 @@ fn is_border_pixel(
     row: usize,
     col: usize,
     rows: usize,
-    cols: usize,
+    _cols: usize,
     current_segment: usize
 ) -> bool {
-    // Check surrounding pixels for different segments
-    let up = if row == 0 { None } else { Some(segmentation_map[row - 1][col]) };
+    // chekc only left and down side to get 1 pixel borders
     let down = if row == rows - 1 { None } else { Some(segmentation_map[row + 1][col]) };
     let left = if col == 0 { None } else { Some(segmentation_map[row][col - 1]) };
-    let right = if col == cols - 1 { None } else { Some(segmentation_map[row][col + 1]) };
 
-    // Check if any surrounding pixel has a different segment
-    // if let Some(segment) = up {
-    //     if segment != current_segment {
-    //         return true;
-    //     }
-    // }
     if let Some(segment) = down {
         if segment != current_segment {
             return true;
@@ -250,11 +242,6 @@ fn is_border_pixel(
             return true;
         }
     }
-    // if let Some(segment) = right {
-    //     if segment != current_segment {
-    //         return true;
-    //     }
-    // }
 
     false
 }

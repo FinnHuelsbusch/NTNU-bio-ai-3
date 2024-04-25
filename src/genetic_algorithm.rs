@@ -1,23 +1,15 @@
 use std::io::{ self, Write };
 
-use image::{ Rgb, RgbImage };
-
 use crate::crossover_functions::crossover;
 
-use crate::distance::euclidean_distance;
 use crate::global_data::GlobalData;
-use crate::individual::{ Individual };
-use crate::utils::{ show, show_with_data };
+use crate::individual::Individual;
+use crate::utils::show_with_data;
 
-use crate::mutation_functions::{ eat_similar, mutate };
+use crate::mutation_functions::mutate;
 use crate::selection_functions::{ parent_selection, survivor_selection };
 use crate::{ config::Config, population::Population };
-use crate::population::{
-    self,
-    initialize_population,
-    non_dominated_sort,
-    save_individuals_to_files,
-};
+use crate::population::{ initialize_population, non_dominated_sort, save_individuals_to_files };
 
 fn log_population_statistics(
     population: &Population,
@@ -90,6 +82,7 @@ fn log_population_statistics(
         file_output += "\n";
     }
 
+    // Comment this in for single threaded logs
     // let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
     // file.write_all(file_output.as_bytes()).unwrap();
 
@@ -123,6 +116,7 @@ fn log_population_statistics(
         max_overall_deviation_fitness,
         min_weighted_fitness
     );
+    println!("");
 }
 
 pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData) {
@@ -130,11 +124,11 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
     print!("Initializing Population...");
     let mut population: Population = initialize_population(config, global_data);
 
-    print!("DONE\nInitial Population Statistics: ");
+    print!("DONE\nInitial Population Statistics: \n");
 
     for generation in 0..config.number_of_generations {
         let current_population_ranked = non_dominated_sort(&population);
-        println!("{:?}, {:?}", population.len(), current_population_ranked.len());
+
         log_population_statistics(&population, &current_population_ranked, generation);
 
         println!("Calculating Generation: {:?}", generation);
@@ -146,7 +140,7 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         print!("CROSS|");
         io::stdout().flush().unwrap();
         let mut children = parents.clone();
-        crossover(&mut children, config, global_data);
+        crossover(&mut children, config);
 
         print!("MUT|");
         io::stdout().flush().unwrap();
@@ -163,14 +157,9 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         println!("SURV_SEL");
         io::stdout().flush().unwrap();
         population = survivor_selection(&population, &children, config);
-
-        // show(&population[0].get_segment_border_image_inline(global_data));
     }
-    // eat_similar(&mut population[0], 1.0, global_data);
-    // population.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
-    // show(&population[0].get_segment_border_image_inline(global_data));
-    // let distance = euclidean_distance(&Rgb([123, 254, 195]), &Rgb([105, 228, 168]));
-    // println!("diastance: {}", distance);
+
+    // export and show result images of the pareto front if we use multi objective
     if config.export_pareto_front {
         let pareto_fronts = non_dominated_sort(&population);
         let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
@@ -184,10 +173,7 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
             }
         }
     } else {
-        // sort the population by fitness and show the best individual
-        // TODO: Ich erwarte, dass das "beste" Individuum Edge value fitness = 0 hat Connectivity fitness = 0 und Overall deviation fitness = Hoch, da der penalty auf connectivity extrem hoch ist.
-        // Das ganze sollte demnach einem Bild entsprechen, welches nur aus einem einzigen Segment besteht, welches die gesamte Fläche des Bildes einnimmt.
-        // Unten wird bei mir auch die fitness wie erwartet ausgegeben, jedoch hat das Bild viele Kleine Segmente, was nicht sein sollte.
+        // sort by weighted fitness, export the best and show solution
         population.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
         println!("Best Individual Fitness: {:?}", population[0].get_fitness());
         let _ = save_individuals_to_files(&vec![population[0].clone()], config, global_data);

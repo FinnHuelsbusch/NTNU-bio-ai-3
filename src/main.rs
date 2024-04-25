@@ -1,12 +1,15 @@
-use std::{env, path::Path, thread};
+use std::{ env, path::Path, thread };
 
 use config::{ initialize_config, Config };
-use image::{ imageops::blur, GrayImage, ImageBuffer, Luma, Pixel, RgbImage };
+use image::Luma;
 use imageproc::filter::gaussian_blur_f32;
-use rand::{ thread_rng, Rng };
 
 use crate::{
-    distance::calculate_euclidean_distance_map_for_neighbors, genetic_algorithm::run_genetic_algorithm_instance, global_data::{ generate_pixel_edge_weights, GlobalData }, individual::Individual, population::clear_dir, utils::{ get_edge_weighted_random_pixel_index, show }
+    distance::calculate_euclidean_distance_map_for_neighbors,
+    genetic_algorithm::run_genetic_algorithm_instance,
+    global_data::{ generate_pixel_edge_weights, GlobalData },
+    individual::Individual,
+    population::clear_dir,
 };
 
 mod config;
@@ -36,48 +39,23 @@ fn main() {
     let config: Config = initialize_config(config_path);
     println!("{}", serde_json::to_string_pretty(&config).unwrap());
 
-
-
-    // let mut test: GrayImage = ImageBuffer::new(edge_image.width(), edge_image.height());
-
-    // for _ in 0..100000 {
-    //     let index = get_edge_weighted_random_pixel_index(&global_data);
-    //     let column = (index % global_data.width) as i32;
-    //     let row = (index / global_data.width) as i32;
-    //     let pixel = test.get_pixel_mut(column as u32, row as u32);
-
-    //     *pixel = image::Luma([pixel.0[0] + 10]);
-    // }
-
-    // let mut rgb_image_edge: RgbImage = ImageBuffer::new(edge_image.width(), edge_image.height());
-    // for row in 0..test.height() {
-    //     for column in 0..test.width() {
-    //         let pixel = test.get_pixel(column as u32, row as u32);
-    //         let copy_pixel = rgb_image_edge.get_pixel_mut(column as u32, row as u32);
-    //         *copy_pixel = image::Rgb([pixel.0[0], pixel.0[0], pixel.0[0]]);
-    //     }
-    // }
-
-    // show(&rgb_image_edge);
-
     // Clean the export directory
     let path_string = format!("./logs/result_segmentation/{}", config.problem_instance);
     let path = Path::new(&path_string);
     clear_dir(path);
 
-
-    
+    // Multithreading
     let mut handles = vec![];
     for _ in 0..config.number_of_threads {
         let config = config.clone();
 
         let handle = thread::spawn(move || {
-                // Load the rgb image for the global data
+            // Load the rgb image for the global data
             let rgb_image = Individual::open_image_as_rgb(
                 &format!("./Project 3 training_images/{}/Test image.jpg", config.problem_instance)
             );
 
-            // Load the edge image and the biased weights
+            // Load the edge image for the biased weights
             let edge_image = Individual::open_image_as_edge_map(
                 &format!("./Project 3 training_images/{}/Test image.jpg", config.problem_instance),
                 config.canny_hysteresis_low,
@@ -103,6 +81,7 @@ fn main() {
                 *pixel = Luma([((pixel.0[0] as f32) * scale).round() as u8]);
             });
 
+            // calculate per pixel weights
             let weights = generate_pixel_edge_weights(&blurred);
 
             let global_data = GlobalData {
@@ -119,5 +98,5 @@ fn main() {
     }
     for handle in handles {
         handle.join().unwrap();
-    } 
+    }
 }

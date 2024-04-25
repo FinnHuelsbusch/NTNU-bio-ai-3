@@ -1,17 +1,14 @@
-use std::{ collections::{ HashMap, HashSet } };
+use std::collections::{ HashMap, HashSet };
 
-use image::{ GenericImageView, Rgb, RgbImage };
-use imageproc::drawing::Canvas;
 use queues::{ queue, IsQueue, Queue };
 use rand::{ thread_rng, Rng };
 
 use crate::{
-    config::{ self, Config },
-    distance::{ self, euclidean_distance },
-    global_data::{ self, GlobalData },
-    individual::{ Connection, Genome, Individual },
+    config::Config,
+    global_data::GlobalData,
+    individual::{ Connection, Individual },
     population::Population,
-    utils::{ get_edge_weighted_random_pixel_index, show },
+    utils::get_edge_weighted_random_pixel_index,
 };
 
 fn get_biggest_segment_direction(

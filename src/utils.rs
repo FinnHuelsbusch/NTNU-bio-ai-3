@@ -2,7 +2,7 @@ use image::RgbImage;
 use rand::{ thread_rng, Rng };
 use show_image::{ create_window, event };
 
-use crate::{ global_data::{ self, GlobalData }, individual::{ self, Individual } };
+use crate::{ global_data::GlobalData, individual::Individual };
 
 fn combine_images(img1: &RgbImage, img2: &RgbImage) -> RgbImage {
     let (width1, height) = img1.dimensions();
@@ -25,6 +25,7 @@ fn combine_images(img1: &RgbImage, img2: &RgbImage) -> RgbImage {
     combined_image
 }
 
+#[allow(dead_code)]
 pub fn show(image: &RgbImage) {
     // Create a window and display the image.
     let window = create_window("Debug", Default::default()).unwrap();
@@ -45,6 +46,7 @@ pub fn show(image: &RgbImage) {
     }
 }
 
+#[allow(dead_code)]
 pub fn show_with_data(image: &RgbImage, individual: &Individual, global_data: &GlobalData) {
     // Create a window and display the image.
     let multi_fitness = individual.get_objectives();
@@ -56,9 +58,12 @@ pub fn show_with_data(image: &RgbImage, individual: &Individual, global_data: &G
         multi_fitness.2,
         fitness
     );
+
     let black_white_image = individual.get_segment_border_image(global_data);
+    let segment_image = individual.get_segments_image(global_data);
     let window = create_window(title, Default::default()).unwrap();
-    window.set_image("image-001", combine_images(&image.clone(), &black_white_image)).unwrap();
+    let combined = combine_images(&black_white_image, &segment_image);
+    window.set_image("image-001", combine_images(&image.clone(), &combined)).unwrap();
 
     // Print keyboard events until Escape is pressed, then exit.
     // If the user closes the window, the channel is closed and the loop also exits.

@@ -9,7 +9,6 @@ pub fn one_point_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Genom
     let mut new_genome1 = genome1.clone();
     let mut new_genome2 = genome2.clone();
 
-
     new_genome1[rng_num..].swap_with_slice(&mut new_genome2[rng_num..]);
 
     (new_genome1.to_vec(), new_genome2.to_vec())
@@ -59,11 +58,7 @@ pub fn uniform_crossover(genome1: &Genome, genome2: &Genome) -> (Genome, Genome)
     (child1, child2)
 }
 
-pub fn crossover(
-    population: &mut Population,
-    config: &Config,
-    global_data: &GlobalData
-) {
+pub fn crossover(population: &mut Population, config: &Config) {
     let mut rng = rand::thread_rng();
     for crossover_config in config.crossovers.iter() {
         // Calculate the number of crossovers which should happen for the specific config
@@ -110,7 +105,6 @@ pub fn crossover(
             population[individual_index_a].set_needs_update();
             population[individual_index_b].genome = child_genomes.1;
             population[individual_index_b].set_needs_update();
-            
         }
     }
 }

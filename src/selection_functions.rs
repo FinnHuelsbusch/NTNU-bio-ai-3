@@ -4,9 +4,8 @@ use rand::Rng;
 
 use crate::{
     config::Config,
-    global_data,
-    individual::{ self, Individual },
-    population::{ self, non_dominated_sort, Population },
+    individual::Individual,
+    population::{ non_dominated_sort, Population },
 };
 
 fn tournament_selection(
@@ -267,7 +266,7 @@ pub fn survivor_selection(
     children: &Population,
     config: &Config
 ) -> Population {
-    let mut new_population: Population = Vec::with_capacity(config.population_size);
+    let mut new_population: Population;
 
     // Combine Population. The selection functions are responsible to cut the population back to its needed size
     if config.survivor_selection.combine_parents_and_offspring.unwrap_or(false) {

@@ -1,6 +1,6 @@
 use crate::{ config::Config, global_data::GlobalData, individual::{ get_mst_genome, Individual } };
 
-use std::fs::{ self, create_dir_all, read_dir, remove_dir, remove_file };
+use std::fs::{ create_dir_all, read_dir, remove_dir, remove_file };
 
 use std::path::Path;
 
@@ -108,9 +108,12 @@ pub fn save_individuals_to_files(
         let border_image = individual.get_segment_border_image(global_data);
 
         border_image.save(
-            format!("./logs/result_segmentation/{}/result_{}.png", config.problem_instance, thread_rng.gen::<u32>())
+            format!(
+                "./logs/result_segmentation/{}/result_{}.png",
+                config.problem_instance,
+                thread_rng.gen::<u32>()
+            )
         )?;
-
     }
 
     Ok(())

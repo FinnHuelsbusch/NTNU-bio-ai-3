@@ -47,16 +47,16 @@
     {
       "name": "eat_similar",
       "probability": 0.1,
-      "max_depth_percent_of_picture": 0.15
+      "max_depth_percent_of_picture": 0.1
     },
     {
       "name": "flip_to_smallest_deviation",
       "probability": 0.05,
       "radius": 3
-    }, 
+    },
     {
-      "name": "destroy_small_segments", 
-      "probability": 0.1, 
+      "name": "destroy_small_segments",
+      "probability": 0.1,
       "minimum_coverage_percentage": 0.05
     }
   ],

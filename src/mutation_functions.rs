@@ -94,12 +94,29 @@ fn flip_to_smallest_segment(child: &mut Individual, global_data: &GlobalData) {
     child.genome[index] = lowest_direction;
 }
 
+fn is_pixel_within_variance(
+    pixel: &(f64, f64, f64),
+    mean: &(f64, f64, f64),
+    variance: &(f64, f64, f64)
+) -> bool {
+    // Calculate squared deviations from the mean for the new pixel
+    let diff_red = (pixel.0 - mean.0).abs().powf(2.0);
+    let diff_green = (pixel.1 - mean.1).abs().powf(2.0);
+    let diff_blue = (pixel.2 - mean.2).abs().powf(2.0);
+
+    // Check if the sum of squared deviations is less than or equal to a threshold
+    let threshold = 3.0; // Adjust threshold based on your desired tolerance
+
+    diff_red + diff_green + diff_blue <=
+        threshold * variance.0 + threshold * variance.1 + threshold * variance.2
+}
+
 fn connect_similar_pixels_recursive(
     index: usize,
     child: &mut Individual,
     seen_pixels: &mut Vec<usize>,
-    mean: &Rgb<u8>,
-    distance_threshold: f64,
+    mean: &(f64, f64, f64),
+    variance: &(f64, f64, f64),
     global_data: &GlobalData,
     max_depth: usize
 ) {
@@ -143,14 +160,16 @@ fn connect_similar_pixels_recursive(
             continue;
         }
 
-        let euclidian_distance = euclidean_distance(
-            global_data.rgb_image.get_pixel(column_new as u32, row_new as u32),
-            mean
-        );
+        let current_pixel = global_data.rgb_image.get_pixel(column_new as u32, row_new as u32);
 
-        if euclidian_distance <= distance_threshold {
+        if
+            is_pixel_within_variance(
+                &(current_pixel.0[0] as f64, current_pixel.0[1] as f64, current_pixel.0[2] as f64),
+                mean,
+                variance
+            )
+        {
             // if the pixel is similar. Redirect it to the current pixel
-
             child.genome[new_index] = position.2;
 
             // and go recursive inside it
@@ -159,7 +178,7 @@ fn connect_similar_pixels_recursive(
                 child,
                 seen_pixels,
                 mean,
-                distance_threshold,
+                variance,
                 global_data,
                 max_depth
             );
@@ -308,6 +327,7 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
     let segment = segment_map[row as usize][column as usize];
 
     let mut mean_pixel_color = (0.0, 0.0, 0.0);
+    let mut variance_pixel_color = (0.0, 0.0, 0.0);
     let mut number_of_pixels_in_segment = 0;
 
     // loop over every pixel of that segment
@@ -319,13 +339,32 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
             }
 
             let current_pixel = global_data.rgb_image.get_pixel(x as u32, y as u32);
+
+            // Update mean
             mean_pixel_color.0 += current_pixel.0[0] as f64;
             mean_pixel_color.1 += current_pixel.0[1] as f64;
             mean_pixel_color.2 += current_pixel.0[2] as f64;
+
+            // Calculate squared difference from the mean
+            let diff_red = (current_pixel.0[0] as f64) - mean_pixel_color.0;
+            let diff_green = (current_pixel.0[1] as f64) - mean_pixel_color.1;
+            let diff_blue = (current_pixel.0[2] as f64) - mean_pixel_color.2;
+
+            // Update variance (accumulate squared differences)
+            variance_pixel_color.0 += diff_red * diff_red;
+            variance_pixel_color.1 += diff_green * diff_green;
+            variance_pixel_color.2 += diff_blue * diff_blue;
+
             number_of_pixels_in_segment += 1;
         }
     }
 
+    // calculate final variance by averaging squared differences
+    variance_pixel_color.0 /= number_of_pixels_in_segment as f64;
+    variance_pixel_color.1 /= number_of_pixels_in_segment as f64;
+    variance_pixel_color.2 /= number_of_pixels_in_segment as f64;
+
+    // calculate mean pixel color
     mean_pixel_color.0 /= number_of_pixels_in_segment as f64;
     mean_pixel_color.1 /= number_of_pixels_in_segment as f64;
     mean_pixel_color.2 /= number_of_pixels_in_segment as f64;
@@ -334,12 +373,12 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
         random_index,
         child,
         &mut vec![],
-        &Rgb([
-            mean_pixel_color.0.round() as u8,
-            mean_pixel_color.1.round() as u8,
-            mean_pixel_color.2.round() as u8,
-        ]),
-        60.0,
+        &(mean_pixel_color.0 as f64, mean_pixel_color.1 as f64, mean_pixel_color.2 as f64),
+        &(
+            variance_pixel_color.0 as f64,
+            variance_pixel_color.1 as f64,
+            variance_pixel_color.2 as f64,
+        ),
         global_data,
         max_depth
     );

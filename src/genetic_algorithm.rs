@@ -169,6 +169,8 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
 
     // eat_similar(&mut population[0], 1.0, global_data);
 
+    // show(&population[0].get_segment_border_image_inline(global_data));
+
     if config.export_pareto_front {
         let pareto_fronts = non_dominated_sort(&population);
         let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);

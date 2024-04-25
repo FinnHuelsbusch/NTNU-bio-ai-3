@@ -1,5 +1,4 @@
-use std::{collections::{HashMap, HashSet}, os::unix::thread};
-
+use std::{ collections::{ HashMap, HashSet } };
 
 use image::{ GenericImageView, Rgb, RgbImage };
 use imageproc::drawing::Canvas;
@@ -194,6 +193,9 @@ fn connect_similar_pixels(
         }
     }
 
+    // println!("changed {:?}", changed_pixels.len());
+    // println!("skipped {:?}", skipped_pixels.len());
+
     for pixel_index in skipped_pixels {
         let column = (pixel_index % global_data.width) as i32;
         let row = (pixel_index / global_data.width) as i32;
@@ -231,7 +233,11 @@ fn connect_similar_pixels(
     // show(&copy);
 }
 
-pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalData, minimum_coverage_percentage: f64) {
+pub fn destroy_small_segments(
+    individual: &mut Individual,
+    global_data: &GlobalData,
+    minimum_coverage_percentage: f64
+) {
     let segment_map = individual.get_cluster_map(
         global_data.width as i64,
         global_data.height as i64
@@ -252,104 +258,105 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
     println!("Debugging startet");
     println!("Number of segments: {}", segmentation_size_map.len());
 
-
     for (key, value) in segmentation_size_map.iter() {
         let count = value.0;
         let mut row = value.1;
         let mut column = value.2;
-        let percentage_covered_by_cluster = count as f64 / ((global_data.width * global_data.height) as f64) ;
+        let percentage_covered_by_cluster =
+            (count as f64) / ((global_data.width * global_data.height) as f64);
         if percentage_covered_by_cluster < minimum_coverage_percentage {
             let mut seen_pixels: HashSet<(usize, usize)> = HashSet::new();
             let mut current_segment = segment_map[row as usize][column as usize];
             let mut current_direction = individual.genome[row * global_data.width + column];
-            while current_segment == *key &&  
+            while
+                current_segment == *key &&
                 current_direction != Connection::None &&
                 !seen_pixels.contains(&(row, column))
+            {
+                // check if current pixel is pointing outside of the picture
+                if
+                    (row == 0 && current_direction == Connection::Up) ||
+                    (row == (global_data.height as usize) - 1 &&
+                        current_direction == Connection::Down) ||
+                    (column == 0 && current_direction == Connection::Left) ||
+                    (column == (global_data.width as usize) - 1 &&
+                        current_direction == Connection::Right)
                 {
-                    // check if current pixel is pointing outside of the picture
-                    if
-                        (row == 0 && current_direction == Connection::Up) ||
-                        (row == (global_data.height as usize) - 1 && current_direction == Connection::Down) ||
-                        (column == 0 && current_direction == Connection::Left) ||
-                        (column == (global_data.width as usize) - 1 && current_direction == Connection::Right)
-                    {
-                        // the pixel is pointing outside of the picture -> it is the root of the segment
-                        // check if segment can be combined with oghter segment
-                        // this is not the case in the following case:
-                        //  ---------
-                        // |None|Left|
-                        // |Up  |    |
-                        // No matter how non is flipped, it will not unify the segment with any other segment
-                        println!("Pixel is pointing outside of the picture");
-                        break;
-
-
-                    } else{
-                        // the current pixel is pointing to another pixel
-                        // get the new pixel
-                        let new_row = row as i32 + match current_direction {
+                    // the pixel is pointing outside of the picture -> it is the root of the segment
+                    // check if segment can be combined with oghter segment
+                    // this is not the case in the following case:
+                    //  ---------
+                    // |None|Left|
+                    // |Up  |    |
+                    // No matter how non is flipped, it will not unify the segment with any other segment
+                    println!("Pixel is pointing outside of the picture");
+                    break;
+                } else {
+                    // the current pixel is pointing to another pixel
+                    // get the new pixel
+                    let new_row =
+                        (row as i32) +
+                        (match current_direction {
                             Connection::Up => -1,
                             Connection::Down => 1,
                             _ => 0,
-                        };
-                        let new_column = column as i32 + match current_direction {
+                        });
+                    let new_column =
+                        (column as i32) +
+                        (match current_direction {
                             Connection::Left => -1,
                             Connection::Right => 1,
                             _ => 0,
-                        };
+                        });
 
-                        let new_pixel_segment = segment_map[new_row as usize][new_column as usize];
-                        if new_pixel_segment == current_segment {
-                            // the new pixel is part of the same segment
-                            // set the new pixel as seen
-                            seen_pixels.insert((row, column));
-                            // set the new pixel as the current pixel
-                            row = new_row as usize;
-                            column = new_column as usize;
-                            current_segment = new_pixel_segment;
-                            current_direction = individual.genome[row * global_data.width + column];
-                        } else {
-                           panic!("This should not happen");
-                            
-                        }
+                    let new_pixel_segment = segment_map[new_row as usize][new_column as usize];
+                    if new_pixel_segment == current_segment {
+                        // the new pixel is part of the same segment
+                        // set the new pixel as seen
+                        seen_pixels.insert((row, column));
+                        // set the new pixel as the current pixel
+                        row = new_row as usize;
+                        column = new_column as usize;
+                        current_segment = new_pixel_segment;
+                        current_direction = individual.genome[row * global_data.width + column];
+                    } else {
+                        panic!("This should not happen");
                     }
                 }
+            }
 
-                let mut thread_rng = rand::thread_rng();
-                let new_direction = match thread_rng.gen_range(1..5) {
-                    1 => Connection::Up,
-                    2 => Connection::Down,
-                    3 => Connection::Left,
-                    4 => Connection::Right,
-                    _ => panic!("Invalid connection value"),
-                };
-                // walk in chosen direction until the end of the segment is reached or the picture is left
-                while (segment_map[row][column] == *key){
-                    individual.genome[row * global_data.width + column] = new_direction;
-                    row = (row as i32 + match new_direction {
+            let mut thread_rng = rand::thread_rng();
+            let new_direction = match thread_rng.gen_range(1..5) {
+                1 => Connection::Up,
+                2 => Connection::Down,
+                3 => Connection::Left,
+                4 => Connection::Right,
+                _ => panic!("Invalid connection value"),
+            };
+            // walk in chosen direction until the end of the segment is reached or the picture is left
+            while segment_map[row][column] == *key {
+                individual.genome[row * global_data.width + column] = new_direction;
+                row = ((row as i32) +
+                    (match new_direction {
                         Connection::Up => -1,
                         Connection::Down => 1,
                         _ => 0,
-                    }) as usize;
-                    column = (column as i32 + match new_direction {
+                    })) as usize;
+                column = ((column as i32) +
+                    (match new_direction {
                         Connection::Left => -1,
                         Connection::Right => 1,
                         _ => 0,
-                    }) as usize;
+                    })) as usize;
 
-                    if row >= global_data.height ||column >= global_data.width {
-                        println!("Reached end of picture");
-                        break;
-                    }
+                if row >= global_data.height || column >= global_data.width {
+                    println!("Reached end of picture");
+                    break;
                 }
-                
-            
+            }
         }
     }
-
-    
 }
-
 
 // pick a random pixel. and it all similar ones recursive without depth limit
 pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data: &GlobalData) {
@@ -368,7 +375,7 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
     let column = (random_index % global_data.width) as i32;
     let row = (random_index / global_data.width) as i32;
 
-    // let pixel = test.get_pixel_mut(column as u32, row as u32);
+    let pixel = global_data.rgb_image.get_pixel(column as u32, row as u32);
     // *pixel = Rgb([0, 255, 255]);
 
     // get the segment from the pixel
@@ -430,12 +437,25 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
     variance_pixel_color.1 /= number_of_pixels_in_segment as f64;
     variance_pixel_color.2 /= number_of_pixels_in_segment as f64;
 
-    let mean = (mean_pixel_color.0, mean_pixel_color.1, mean_pixel_color.2);
+    // let mut mean = (mean_pixel_color.0, mean_pixel_color.1, mean_pixel_color.2);
+    let mean = (pixel.0[0] as f64, pixel.0[1] as f64, pixel.0[2] as f64);
     let variance = (
-        variance_pixel_color.0.clamp(1.0, 200.0),
-        variance_pixel_color.1.clamp(1.0, 200.0),
-        variance_pixel_color.2.clamp(1.0, 200.0),
+        variance_pixel_color.0.clamp(1.0, 80.0),
+        variance_pixel_color.1.clamp(1.0, 80.0),
+        variance_pixel_color.2.clamp(1.0, 80.0),
     );
+
+    // initial pixel has a too high varianze to the mean, so the segment is probably to big and faulty
+    // if
+    //     (mean.0 - (pixel.0[0] as f64)).abs() >= 30.0 &&
+    //     (mean.1 - (pixel.0[1] as f64)).abs() >= 30.0 &&
+    //     (mean.2 - (pixel.0[2] as f64)).abs() >= 30.0
+    // {
+    //     mean = (pixel.0[0] as f64, pixel.0[1] as f64, pixel.0[2] as f64);
+    // }
+
+    // println!("Mean: {:?}", mean);
+    // println!("Variance: {:?}", variance);
 
     // test pixel mean
     // let pixel = global_data.rgb_image.get_pixel(column as u32, row as u32);

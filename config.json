@@ -1,8 +1,8 @@
 {
-  "export_pareto_front": false, 
+  "export_pareto_front": true,
   "problem_instance": "86016",
-  "population_size": 50,
-  "number_of_generations": 400,
+  "population_size": 20,
+  "number_of_generations": 100,
   "edge_value_multiplier": 1.5,
   "connectivity_multiplier": 275.0,
   "overall_deviation_multiplier": 1.0,
@@ -12,7 +12,7 @@
   "initialization_method": "mst",
   "preserve_skyline": false,
   "parent_selection": {
-    "name": "roulett_wheel_weighted",
+    "name": "tournament",
     "tournament_size": 4,
     "probability": 0.7
   },
@@ -47,7 +47,7 @@
     {
       "name": "eat_similar",
       "probability": 0.1,
-      "max_depth_percent_of_picture": 0.1
+      "max_depth_percent_of_picture": 0.8
     },
     {
       "name": "flip_to_smallest_deviation",
@@ -56,12 +56,12 @@
     },
     {
       "name": "destroy_small_segments",
-      "probability": 0.1,
+      "probability": 0.0,
       "minimum_coverage_percentage": 0.05
     }
   ],
   "survivor_selection": {
-    "name": "tournament_weighted",
+    "name": "NSGA-2",
     "combine_parents_and_offspring": true,
     "tournament_size": 4,
     "probability": 0.75

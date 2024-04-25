@@ -437,7 +437,7 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
     variance_pixel_color.2 /= number_of_pixels_in_segment as f64;
 
     // let mean = (pixel.0[0] as f64, pixel.0[1] as f64, pixel.0[2] as f64);
-    let variance_random = thread_rng().gen_range(20.0..130.0);
+    let variance_random = thread_rng().gen_range(40.0..100.0);
     let variance = (
         variance_pixel_color.0.clamp(1.0, variance_random),
         variance_pixel_color.1.clamp(1.0, variance_random),

@@ -235,11 +235,11 @@ fn is_border_pixel(
     let right = if col == cols - 1 { None } else { Some(segmentation_map[row][col + 1]) };
 
     // Check if any surrounding pixel has a different segment
-    if let Some(segment) = up {
-        if segment != current_segment {
-            return true;
-        }
-    }
+    // if let Some(segment) = up {
+    //     if segment != current_segment {
+    //         return true;
+    //     }
+    // }
     if let Some(segment) = down {
         if segment != current_segment {
             return true;
@@ -250,11 +250,11 @@ fn is_border_pixel(
             return true;
         }
     }
-    if let Some(segment) = right {
-        if segment != current_segment {
-            return true;
-        }
-    }
+    // if let Some(segment) = right {
+    //     if segment != current_segment {
+    //         return true;
+    //     }
+    // }
 
     false
 }
@@ -262,8 +262,6 @@ fn is_border_pixel(
 pub struct Individual {
     pub genome: Genome,
     needs_update: bool,
-
-    
 
     // penalty
     edge_value_fitness: f64,

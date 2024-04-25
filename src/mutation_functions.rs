@@ -1,3 +1,4 @@
+use core::num;
 use std::{collections::{HashMap, HashSet}, os::unix::thread};
 
 
@@ -201,14 +202,13 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
                 .or_insert((1, row, column));
         }
     }
-    println!("Debugging startet");
-    println!("Number of segments: {}", segmentation_size_map.len());
 
 
-    for (key, value) in segmentation_size_map.iter() {
-        let count = value.0;
-        let mut row = value.1;
-        let mut column = value.2;
+
+    for key in segmentation_size_map.clone().keys() {
+        let count = segmentation_size_map.get(key).unwrap().0;
+        let mut row = segmentation_size_map.get(key).unwrap().1;
+        let mut column = segmentation_size_map.get(key).unwrap().2;
         let percentage_covered_by_cluster = count as f64 / ((global_data.width * global_data.height) as f64) ;
         if percentage_covered_by_cluster < minimum_coverage_percentage {
             let mut seen_pixels: HashSet<(usize, usize)> = HashSet::new();
@@ -232,7 +232,6 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
                         // |None|Left|
                         // |Up  |    |
                         // No matter how non is flipped, it will not unify the segment with any other segment
-                        println!("Pixel is pointing outside of the picture");
                         break;
 
 
@@ -266,17 +265,59 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
                         }
                     }
                 }
+                let root_pixel = (row, column);
+                let mut number_of_changes:HashMap<Connection, usize> = HashMap::new();
+                for new_direction in [Connection::Up, Connection::Down, Connection::Left, Connection::Right].iter(){
+                    if *new_direction == current_direction{
+                        number_of_changes.insert(*new_direction, usize::MAX);
+                        continue;
+                    }
 
-                let mut thread_rng = rand::thread_rng();
-                let new_direction = match thread_rng.gen_range(1..5) {
-                    1 => Connection::Up,
-                    2 => Connection::Down,
-                    3 => Connection::Left,
-                    4 => Connection::Right,
-                    _ => panic!("Invalid connection value"),
-                };
+                    let mut test_individual = individual.clone();
+
+                    row = root_pixel.0;
+                    column = root_pixel.1;
+                    let mut steps = 0;
+                    // walk in chosen direction until the end of the segment is reached or the picture is left
+                    while segment_map[row][column] == *key{
+                        steps += 1;
+                        test_individual.genome[row * global_data.width + column] = *new_direction;
+                        row = (row as i32 + match new_direction {
+                            Connection::Up => -1,
+                            Connection::Down => 1,
+                            _ => 0,
+                        }) as usize;
+                        column = (column as i32 + match new_direction {
+                            Connection::Left => -1,
+                            Connection::Right => 1,
+                            _ => 0,
+                        }) as usize;
+
+                        if row >= global_data.height ||column >= global_data.width {
+                            number_of_changes.insert(*new_direction, usize::MAX);
+                            break;
+                        }
+                    }
+                    if !(row >= global_data.height ||column >= global_data.width) && segment_map[row][column] != *key{
+                        number_of_changes.insert(*new_direction, steps);
+                    }
+                    
+                }
+
+                // new direction is the one with the smallest number of changes
+                let mut new_direction = Connection::None;
+                let mut min_changes = usize::MAX;
+                for (key, value) in number_of_changes.iter(){
+                    if *value < min_changes{
+                        new_direction = *key;
+                        min_changes = *value;
+                    }
+                }
+                row = root_pixel.0;
+                column = root_pixel.1;
+
                 // walk in chosen direction until the end of the segment is reached or the picture is left
-                while (segment_map[row][column] == *key){
+                while segment_map[row][column] == *key{
                     individual.genome[row * global_data.width + column] = new_direction;
                     row = (row as i32 + match new_direction {
                         Connection::Up => -1,
@@ -290,16 +331,14 @@ pub fn destroy_small_segments(individual: &mut Individual, global_data: &GlobalD
                     }) as usize;
 
                     if row >= global_data.height ||column >= global_data.width {
-                        println!("Reached end of picture");
                         break;
                     }
                 }
-                
-            
-        }
+                if !(row >= global_data.height ||column >= global_data.width) && segment_map[row][column] != *key{
+                    segmentation_size_map.entry(segment_map[row][column]).and_modify(|segment_size| {segment_size.0 += count;});
+                }
+            }     
     }
-
-    
 }
 
 

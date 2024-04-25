@@ -10,7 +10,7 @@ use crate::{
 };
 
 // create a enum
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum Connection {
     None,
     Up,

@@ -101,15 +101,14 @@ fn is_pixel_within_variance(
     variance: &(f64, f64, f64)
 ) -> bool {
     // Calculate squared deviations from the mean for the new pixel
-    let diff_red = (pixel.0 - mean.0).abs().powf(2.0);
-    let diff_green = (pixel.1 - mean.1).abs().powf(2.0);
-    let diff_blue = (pixel.2 - mean.2).abs().powf(2.0);
+    let diff_red = (pixel.0 - mean.0).abs();
+    let diff_green = (pixel.1 - mean.1).abs();
+    let diff_blue = (pixel.2 - mean.2).abs();
 
-    // Check if the sum of squared deviations is less than or equal to a threshold
-    let threshold = 3.0; // Adjust threshold based on your desired tolerance
+    diff_red <= variance.0 && diff_green <= variance.1 && diff_blue <= variance.2
 
-    diff_red + diff_green + diff_blue <=
-        threshold * variance.0 + threshold * variance.1 + threshold * variance.2
+    // diff_red + diff_green + diff_blue <=
+    //     threshold * variance.0 + threshold * variance.1 + threshold * variance.2
 }
 
 fn connect_similar_pixels(
@@ -122,9 +121,17 @@ fn connect_similar_pixels(
     max_depth: usize
 ) {
     let mut pixel_queue: Queue<usize> = queue![start_index];
+    let mut skipped_pixels: Vec<usize> = vec![];
+    let mut changed_pixels: Vec<usize> = vec![];
+
+    // let mut copy = global_data.rgb_image.clone();
 
     while max_depth != seen_pixels.len() && pixel_queue.size() > 0 {
+        // println!("{} {}", max_depth, seen_pixels.len());
         let current_pixel_index = pixel_queue.remove().unwrap();
+        if seen_pixels.contains(&current_pixel_index) {
+            continue;
+        }
         seen_pixels.push(current_pixel_index);
 
         let column = (current_pixel_index % global_data.width) as i32;
@@ -177,9 +184,50 @@ fn connect_similar_pixels(
                 // if the pixel is similar. Redirect it to the current pixel
                 child.genome[new_index] = position.2;
                 pixel_queue.add(new_index).unwrap();
+                changed_pixels.push(new_index);
+                // let pixel = copy.get_pixel_mut(column_new as u32, row_new as u32);
+                // *pixel = Rgb([position.3.0, position.3.1, position.3.2]);
+            } else {
+                skipped_pixels.push(new_index);
             }
         }
     }
+
+    for pixel_index in skipped_pixels {
+        let column = (pixel_index % global_data.width) as i32;
+        let row = (pixel_index / global_data.width) as i32;
+
+        for position in [
+            (-1 as i32, 0 as i32, Connection::Up, (255 as u8, 0 as u8, 255 as u8)),
+            (0, -1, Connection::Left, (0 as u8, 0 as u8, 255 as u8)),
+            (0, 1, Connection::Right, (0 as u8, 255 as u8, 0 as u8)),
+            (1, 0, Connection::Down, (255 as u8, 0 as u8, 0 as u8)),
+        ] {
+            // ignore edges outside of the picture
+            if
+                (row == 0 && position.0 == -1) ||
+                (row == (global_data.height as i32) - 1 && position.0 == 1) ||
+                (column == 0 && position.1 == -1) ||
+                (column == (global_data.width as i32) - 1 && position.1 == 1)
+            {
+                continue;
+            }
+
+            let y_offset = position.0;
+            let x_offset = position.1;
+
+            let new_index = ((row + y_offset) * (global_data.width as i32) +
+                (column + x_offset)) as usize;
+
+            if changed_pixels.contains(&new_index) {
+                child.genome[pixel_index] = position.2;
+                // let pixel = copy.get_pixel_mut(column as u32, row as u32);
+                // *pixel = Rgb([position.3.0, position.3.1, position.3.2]);
+            }
+        }
+    }
+
+    // show(&copy);
 }
 
 pub fn destroy_small_segments(
@@ -308,6 +356,8 @@ pub fn destroy_small_segments(
 pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data: &GlobalData) {
     let random_index = thread_rng().gen_range(0..child.genome.len());
 
+    // let random_index = 34000;
+
     let max_depth = (
         (global_data.width as f64) *
         (global_data.height as f64) *
@@ -327,7 +377,6 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
     let segment = segment_map[row as usize][column as usize];
 
     let mut mean_pixel_color = (0.0, 0.0, 0.0);
-    let mut variance_pixel_color = (0.0, 0.0, 0.0);
     let mut number_of_pixels_in_segment = 0;
 
     // loop over every pixel of that segment
@@ -345,42 +394,61 @@ pub fn eat_similar(child: &mut Individual, percent_of_picture: f64, global_data:
             mean_pixel_color.1 += current_pixel.0[1] as f64;
             mean_pixel_color.2 += current_pixel.0[2] as f64;
 
-            // Calculate squared difference from the mean
-            let diff_red = (current_pixel.0[0] as f64) - mean_pixel_color.0;
-            let diff_green = (current_pixel.0[1] as f64) - mean_pixel_color.1;
-            let diff_blue = (current_pixel.0[2] as f64) - mean_pixel_color.2;
-
-            // Update variance (accumulate squared differences)
-            variance_pixel_color.0 += diff_red * diff_red;
-            variance_pixel_color.1 += diff_green * diff_green;
-            variance_pixel_color.2 += diff_blue * diff_blue;
-
             number_of_pixels_in_segment += 1;
         }
     }
-
-    // calculate final variance by averaging squared differences
-    variance_pixel_color.0 /= number_of_pixels_in_segment as f64;
-    variance_pixel_color.1 /= number_of_pixels_in_segment as f64;
-    variance_pixel_color.2 /= number_of_pixels_in_segment as f64;
 
     // calculate mean pixel color
     mean_pixel_color.0 /= number_of_pixels_in_segment as f64;
     mean_pixel_color.1 /= number_of_pixels_in_segment as f64;
     mean_pixel_color.2 /= number_of_pixels_in_segment as f64;
 
+    let mut variance_pixel_color = (0.0, 0.0, 0.0);
+
+    // loop over every pixel of that segment again to calculate variance
+    for y in 0..global_data.height {
+        for x in 0..global_data.width {
+            let current_segment = segment_map[y][x];
+            if current_segment != segment {
+                continue;
+            }
+
+            let current_pixel = global_data.rgb_image.get_pixel(x as u32, y as u32);
+
+            // calculate squared differences from mean
+            let diff_r = ((current_pixel.0[0] as f64) - mean_pixel_color.0).powi(2);
+            let diff_g = ((current_pixel.0[1] as f64) - mean_pixel_color.1).powi(2);
+            let diff_b = ((current_pixel.0[2] as f64) - mean_pixel_color.2).powi(2);
+
+            variance_pixel_color.0 += diff_r;
+            variance_pixel_color.1 += diff_g;
+            variance_pixel_color.2 += diff_b;
+        }
+    }
+
+    // divide by the number of pixels to get the variance
+    variance_pixel_color.0 /= number_of_pixels_in_segment as f64;
+    variance_pixel_color.1 /= number_of_pixels_in_segment as f64;
+    variance_pixel_color.2 /= number_of_pixels_in_segment as f64;
+
+    let mean = (mean_pixel_color.0, mean_pixel_color.1, mean_pixel_color.2);
+    let variance = (
+        variance_pixel_color.0.clamp(1.0, 200.0),
+        variance_pixel_color.1.clamp(1.0, 200.0),
+        variance_pixel_color.2.clamp(1.0, 200.0),
+    );
+
+    // test pixel mean
+    // let pixel = global_data.rgb_image.get_pixel(column as u32, row as u32);
+
     connect_similar_pixels(
         random_index,
         child,
         &mut vec![],
-        &(mean_pixel_color.0 as f64, mean_pixel_color.1 as f64, mean_pixel_color.2 as f64),
-        &(
-            variance_pixel_color.0 as f64,
-            variance_pixel_color.1 as f64,
-            variance_pixel_color.2 as f64,
-        ),
+        &mean,
+        &variance,
         global_data,
-        1
+        max_depth
     );
 
     // show(&test)

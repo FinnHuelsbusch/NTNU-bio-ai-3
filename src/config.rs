@@ -45,6 +45,8 @@ pub struct Config {
     pub canny_hysteresis_high: f32,
     pub canny_hysteresis_low: f32,
     pub blur_sigma: f32,
+    pub show_images: bool,
+    pub number_of_threads: usize
 }
 
 pub fn initialize_config(file_path: &str) -> Config {

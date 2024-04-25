@@ -5,6 +5,7 @@ use std::fs::{ self, create_dir_all, read_dir, remove_dir, remove_file };
 use std::path::Path;
 
 use image::ImageResult;
+use rand::Rng;
 
 pub type Population = Vec<Individual>;
 
@@ -72,7 +73,7 @@ pub fn non_dominated_sort(population: &Population) -> Vec<Vec<Individual>> {
     fronts
 }
 
-fn clear_dir(dir: &Path) {
+pub fn clear_dir(dir: &Path) {
     if let Ok(entries) = read_dir(dir) {
         for entry in entries {
             if let Ok(entry) = entry {
@@ -100,17 +101,16 @@ pub fn save_individuals_to_files(
     let path_string = format!("./logs/result_segmentation/{}", config.problem_instance);
 
     let path = Path::new(&path_string);
-    clear_dir(path);
     create_dir_all(path).unwrap(); // Create the directory if it doesn't exist
 
-    let mut index = 0;
+    let mut thread_rng = rand::thread_rng();
     for individual in front {
         let border_image = individual.get_segment_border_image(global_data);
 
         border_image.save(
-            format!("./logs/result_segmentation/{}/result_{}.png", config.problem_instance, index)
+            format!("./logs/result_segmentation/{}/result_{}.png", config.problem_instance, thread_rng.gen::<u32>())
         )?;
-        index += 1;
+
     }
 
     Ok(())

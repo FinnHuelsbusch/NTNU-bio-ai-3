@@ -1,5 +1,5 @@
 {
-  "export_pareto_front": false,
+  "export_pareto_front": true,
   "problem_instance": "176035",
   "population_size": 20,
   "number_of_generations": 30,
@@ -11,8 +11,10 @@
   "blur_sigma": 3,
   "initialization_method": "mst",
   "preserve_skyline": false,
+  "show_images": false,
+  "number_of_threads": 12,
   "parent_selection": {
-    "name": "tournament_weighted",
+    "name": "none",
     "tournament_size": 4,
     "probability": 0.7
   },
@@ -63,7 +65,7 @@
     }
   ],
   "survivor_selection": {
-    "name": "roulett_wheel_weighted",
+    "name": "NSGA-2",
     "combine_parents_and_offspring": true,
     "tournament_size": 4,
     "probability": 0.75

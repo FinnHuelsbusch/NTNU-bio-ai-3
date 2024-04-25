@@ -89,8 +89,8 @@ fn log_population_statistics(
         file_output += "\n";
     }
 
-    let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
-    file.write_all(file_output.as_bytes()).unwrap();
+    // let mut file = std::fs::File::create(format!("./logs/pareto_front_{}.txt", iteration)).unwrap();
+    // file.write_all(file_output.as_bytes()).unwrap();
 
     avg_connectivity_fitness /= population.len() as f64;
     avg_overall_deviation_fitness /= population.len() as f64;
@@ -174,8 +174,10 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
     if config.export_pareto_front {
         let pareto_fronts = non_dominated_sort(&population);
         let _ = save_individuals_to_files(&pareto_fronts[0], config, global_data);
-        for individual in pareto_fronts[0].iter() {
-            show(&individual.get_segment_border_image_inline(global_data));
+        if config.show_images {
+            for individual in pareto_fronts[0].iter() {
+                show(&individual.get_segment_border_image_inline(global_data));
+            }
         }
     } else {
         // sort the population by fitness and show the best individual
@@ -185,6 +187,9 @@ pub fn run_genetic_algorithm_instance(config: &Config, global_data: &GlobalData)
         population.sort_by(|a, b| b.get_fitness().partial_cmp(&a.get_fitness()).unwrap());
         println!("Best Individual Fitness: {:?}", population[0].get_fitness());
         let _ = save_individuals_to_files(&vec![population[0].clone()], config, global_data);
-        show(&population[0].get_segment_border_image_inline(global_data));
+        if config.show_images{
+            show(&population[0].get_segment_border_image_inline(global_data));
+        }
+        
     }
 }
